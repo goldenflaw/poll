@@ -4,6 +4,10 @@ A single HTML page. Students scan a QR code on your slide, tap an answer on
 their phone, and the bars on the projector move as the votes land. No student
 accounts, no per-seat license, no data leaving your own Firebase project.
 
+Based on [XuanyaoLiuLab/livepoll](https://github.com/XuanyaoLiuLab/livepoll),
+extended with slides, revisits with before/after, hidden results, student
+questions and plain-text import.
+
 Three files:
 
 | file | what it is |
@@ -63,7 +67,7 @@ git init
 git add index.html firestore.rules README.md
 git commit -m "Live poll app"
 git branch -M main
-git remote add origin https://github.com/XuanyaoLiuLab/livepoll.git
+git remote add origin git@github.com:goldenflaw/poll.git
 git push -u origin main
 ```
 
@@ -71,8 +75,11 @@ Then on GitHub: **Settings → Pages → Source: Deploy from a branch →
 `main` / `root` → Save.** A minute later the site is live at
 
 ```
-https://xuanyaoliulab.github.io/livepoll/
+https://goldenflaw.github.io/poll/
 ```
+
+In Firebase, add that site under **Authentication → Settings → Authorized
+domains** (`goldenflaw.github.io`) so phones can sign in from it.
 
 The repo must be **public** for free GitHub Pages (that's fine — there's no
 secret in it, and student votes live in Firestore, not in the repo).
