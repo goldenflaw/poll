@@ -332,7 +332,7 @@ const ready = new Promise((resolve, reject) => {
 
    Students can type questions in while `qa` is on. Each student reads only
    their own; the instructor sees all, and `spot` is the one on the projector.
-   With `ticker` on, all open ones also stream across the bottom of it; `shown`
+   Unless `ticker` is false, open ones also stream across the bottom of it; `shown`
    counts the passes, and a question drops off the ticker after PASSES of them.
 ---------------------------------------------------------------------- */
 const roomRef  = r          => doc(db, "polls", r);
@@ -1024,7 +1024,10 @@ async function teacher(room){
   document.getElementById("qatoggle").onclick = () =>
     updateDoc(roomRef(room), { qa: !roomData.qa });
   document.getElementById("qaticker").onclick = () =>
-    updateDoc(roomRef(room), { ticker: !roomData.ticker });
+    updateDoc(roomRef(room), { ticker: !tickerOn() });
+
+  // Open student questions scroll across the projector unless you switch it off.
+  const tickerOn = () => roomData.ticker !== false;
 
   // The ticker band lives outside #app so it can pin to the bottom of the screen.
   const band = document.createElement("div");
@@ -1043,7 +1046,7 @@ async function teacher(room){
   function syncTicker(){
     const items = asks.filter(a => a.status !== "answered" && a.id !== roomData.spot && (a.shown || 0) < PASSES);
     tick.set(items);
-    const on = !!roomData.ticker && items.length > 0;
+    const on = tickerOn() && items.length > 0;
     document.body.classList.toggle("ticking", on);
     tick.run(on && document.body.classList.contains("present"));
     fitPresent();     // the ticker and the corner badge take room from the slide
@@ -1329,13 +1332,13 @@ async function teacher(room){
     badge.classList.toggle("has", open.length > 0);
     badge.textContent = `${open.length} student question${open.length === 1 ? "" : "s"}`;
 
-    const s = JSON.stringify([on, !!roomData.ticker, asksBlocked, roomData.spot || null, asks.map(a => [a.id, a.text, a.status || "", a.at, a.shown || 0])]);
+    const s = JSON.stringify([on, tickerOn(), asksBlocked, roomData.spot || null, asks.map(a => [a.id, a.text, a.status || "", a.at, a.shown || 0])]);
     if (s === qaSig) return;
     qaSig = s;
     const toggle = document.getElementById("qatoggle");
     toggle.textContent = on ? "Stop taking questions" : "Let students ask";
     toggle.className = "small" + (on ? "" : " primary");
-    document.getElementById("qaticker").textContent = roomData.ticker ? "Stop scrolling on screen" : "Scroll on screen";
+    document.getElementById("qaticker").textContent = tickerOn() ? "Stop scrolling on screen" : "Scroll on screen";
     document.getElementById("qaclear").disabled = !asks.length;
     document.getElementById("qacount").textContent = open.length ? `· ${open.length} open` : "";
 

@@ -179,8 +179,8 @@ and the student's phone shows it as answered. In present mode, a small
 "N student questions" button in the corner tells you something is waiting.
 Clicking it takes you back to the console.
 
-**Scroll on screen** streams every open question right to left along the
-bottom of the Present view, like a news ticker. New ones join at the end, and
+Open questions stream right to left along the bottom of the Present view,
+like a news ticker (**Stop scrolling on screen** turns that off). New ones join at the end, and
 marking one answered or deleting it takes it off at once. Since questions are
 anonymous, keep an eye on the panel while it's on.
 
