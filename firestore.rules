@@ -4,9 +4,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---- A session: one room per lecture, one QR code ------------------
-    // polls/<ROOM>                                  { owner, current, open }
+    // polls/<ROOM>                                  { owner, current, open, show[], title, qa, spot }
     // polls/<ROOM>/questions/<QID>                  { question, options[] }
     // polls/<ROOM>/questions/<QID>/votes/<uid>      { choice }
+    // polls/<ROOM>/slides/<SID>                     { title, qids[] }
+    //
+    // `current` is the question or slide showing; `show` lists every
+    // question students can answer right now (one, or all on a slide).
     match /polls/{room} {
 
       function room()    { return get(/databases/$(database)/documents/polls/$(room)).data; }
@@ -41,7 +45,9 @@ service cloud.firestore {
 
         // ---- Votes: one document per student, named by their uid.
         // Everyone reads the tally; you write only your own vote, only
-        // while the instructor has voting open on THIS question.
+        // while the instructor has voting open on THIS question — shown on
+        // its own, or as one of the questions on the current slide.
+        // (`current == qid` keeps sessions from before slides working.)
         match /votes/{voterId} {
           allow read: if request.auth != null;
 
@@ -49,11 +55,44 @@ service cloud.firestore {
             && request.auth.uid == voterId
             && request.resource.data.choice is int
             && room().open == true
-            && room().current == qid;
+            && (room().current == qid || qid in room().get('show', []));
 
           allow delete: if request.auth != null
             && (request.auth.uid == voterId || ownsRoom());
         }
+      }
+
+      // ---- Slides: several questions on students' phones at once.
+      // Readable by the class, writable by the instructor.
+      match /slides/{sid} {
+        allow read: if request.auth != null;
+        allow create, update: if ownsRoom()
+          && request.resource.data.title is string
+          && request.resource.data.title.size() < 300
+          && request.resource.data.qids is list
+          && request.resource.data.qids.size() <= 12;
+        allow delete: if ownsRoom();
+      }
+
+      // ---- Student questions, typed in from phones.
+      // polls/<ROOM>/asks/<AID>     { text, by, at, status }
+      // A student sends one only while the instructor has questions turned
+      // on (room.qa), and sees only their own; classmates never see each
+      // other's. The instructor sees all of them and marks or removes them.
+      match /asks/{aid} {
+        allow read: if request.auth != null
+          && (ownsRoom() || resource.data.by == request.auth.uid);
+        allow create: if request.auth != null
+          && room().get('qa', false) == true
+          && request.resource.data.keys().hasOnly(['text', 'by', 'at'])
+          && request.resource.data.by == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.at is number;
+        allow update: if ownsRoom();
+        allow delete: if request.auth != null
+          && (ownsRoom() || resource.data.by == request.auth.uid);
       }
     }
   }

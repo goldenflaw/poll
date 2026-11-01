@@ -11,12 +11,12 @@
 <!-- ==================================================================== -->
 <script>
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBOc2kKC7vpZpHV3n7pNj7yf8igSofDzOY",
-  authDomain: "uchicago-polls.firebaseapp.com",
-  projectId: "uchicago-polls",
-  storageBucket: "uchicago-polls.firebasestorage.app",
-  messagingSenderId: "731797454081",
-  appId: "1:731797454081:web:e447ed5797c69526c7af00"
+  apiKey: "AIzaSyCxjo1jETBuRapkRrNK2QnvVBURL6oPTIk",
+  authDomain: "poll-96c95.firebaseapp.com",
+  projectId: "poll-96c95",
+  storageBucket: "poll-96c95.firebasestorage.app",
+  messagingSenderId: "809015702945",
+  appId: "1:809015702945:web:eb19caaed0b1c4764247e0"
 };
 </script>
 
@@ -77,20 +77,73 @@ window.FIREBASE_CONFIG = {
   .qitem .body{flex:1 1 auto;min-width:0}
   .qitem .t{font-weight:500;overflow-wrap:anywhere}
   .qitem .m{font-size:.8rem;color:var(--muted);margin-top:2px}
+  .qitem .t,.qitem .m{display:block}
   .qitem .acts{flex:0 0 auto;display:flex;gap:6px;flex-wrap:wrap}
 
   /* results */
   .qtext{font-size:1.45rem;font-weight:600;letter-spacing:-.015em;margin:0 0 20px;line-height:1.25}
   .bar{margin-bottom:14px}
-  .bar-top{display:flex;justify-content:space-between;gap:12px;font-size:.95rem;margin-bottom:5px}
-  .bar-label{display:flex;gap:8px;align-items:center;min-width:0}
+  .bar-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:.95rem;margin-bottom:5px}
+  .bar-label{display:flex;gap:8px;align-items:flex-start;min-width:0;flex:1 1 auto}
   .bar-label .tag{width:22px;height:22px;flex:0 0 22px;border-radius:5px;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff}
-  .bar-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-label > span:last-child{min-width:0;overflow-wrap:anywhere}
   .bar-num{flex:0 0 auto;font-variant-numeric:tabular-nums;color:var(--muted)}
   .bar-num b{color:var(--ink)}
-  .track{height:14px;background:#efebe6;border-radius:7px;overflow:hidden}
+  .track{position:relative;height:14px;background:#efebe6;border-radius:7px;overflow:hidden}
   .fill{height:100%;border-radius:7px;width:0;transition:width .45s cubic-bezier(.2,.7,.3,1)}
+  /* after a re-poll: a pale "before" bar above each solid "after" bar */
+  .track.then{height:7px;margin-bottom:4px;background:transparent}
+  .track.then .fill{opacity:.35}
+  .bar-num .then{color:var(--muted)}
+  .key{display:flex;gap:18px;font-size:.8rem;color:var(--muted);margin:0 0 12px}
+  .key i{display:inline-block;width:22px;height:8px;border-radius:4px;background:var(--ink);
+    vertical-align:middle;margin-right:6px}
+  .key i.then{opacity:.35}
   .total{font-variant-numeric:tabular-nums;font-size:.9rem;color:var(--muted);margin-top:18px}
+
+  /* slides: several questions at once */
+  .stitle{font-size:1.1rem;font-weight:600;color:var(--muted);margin:0 0 16px;letter-spacing:-.01em}
+  /* Each question spans three shared rows (prompt, bars, total), so when prompts
+     wrap to different lengths the bars still start level across the columns. */
+  .rgrid{display:grid;column-gap:40px;row-gap:0}
+  .rgrid .result{display:grid;grid-template-columns:minmax(0,1fr);grid-row:span 3;grid-template-rows:subgrid;row-gap:0}
+  .rgrid .qtext{font-size:1.15rem;margin-bottom:14px}
+  .rgrid .total{margin:8px 0 28px}
+  .result{min-width:0}
+  @media (min-width:760px){ .rgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .qitem.slide .n{background:#e3e9ef;color:var(--bar2)}
+  .qitem.slide.live .n{background:var(--accent);color:#fff}
+  .qitem .sub{list-style:none;margin:6px 0 0;padding:0;font-size:.85rem;color:var(--muted)}
+  .qitem .sub li{display:flex;gap:6px;align-items:baseline;margin-top:3px}
+  .qitem .sub li > span:first-child{flex:0 0 auto;min-width:1.6em}
+  .qitem .sub li > span + span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+  .qitem .sub button{flex:0 0 auto;white-space:nowrap;padding:1px 7px;font-size:.75rem}
+  .qitem .move{padding:6px 8px}
+  .loose{margin-top:14px}
+  label.check{display:flex;gap:8px;align-items:flex-start;text-transform:none;letter-spacing:0;
+    font-size:.92rem;color:var(--ink);margin:0 0 8px;cursor:pointer}
+  label.check input{margin-top:.3em;accent-color:var(--accent)}
+  .sq + .sq{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
+  .qnum{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+  .warn{color:#7d3a1f;font-size:.88rem;margin:10px 0 0}
+
+  /* student questions */
+  .ask{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);
+    border-radius:10px;margin-bottom:8px;background:#fff}
+  .ask.done{opacity:.55}
+  .ask.onscreen{border-color:var(--bar2);box-shadow:inset 0 0 0 1px var(--bar2)}
+  .ask .body{flex:1 1 auto;min-width:0}
+  .ask .t{display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+  .ask .m{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
+  .ask .acts{flex:0 0 auto;display:flex;gap:6px;flex-wrap:wrap}
+  .spotcard{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;
+    padding:14px 16px;margin-bottom:16px;border-radius:10px;background:#eef3f7;border-left:4px solid var(--bar2)}
+  .spotcard .lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bar2);font-weight:700;margin-bottom:4px}
+  .spotcard .t{font-size:1.25rem;font-weight:600;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere}
+  .askzone{margin-top:32px;padding-top:20px;border-top:1px solid var(--line)}
+  .askzone textarea{min-height:72px}
+  .mine{margin-top:14px}
+  #qabadge{display:none;position:fixed;bottom:56px;right:14px;z-index:9;font-size:.85rem}
 
   /* join / QR */
   .join{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
@@ -123,6 +176,27 @@ window.FIREBASE_CONFIG = {
   body.present .fill{border-radius:13px}
   body.present .bar{margin-bottom:24px}
   body.present .total{font-size:1.2rem;margin-bottom:70px}
+  body.present .track.then{height:11px;margin-bottom:6px}
+  body.present .key{font-size:1rem;margin-bottom:18px}
+  body.present .wrap.wide{max-width:1500px}
+  body.present .stitle{font-size:1.6rem;margin-bottom:26px}
+  body.present .rgrid{column-gap:56px}
+  body.present .rgrid .qtext{font-size:1.55rem;margin-bottom:18px}
+  body.present .rgrid .bar-top{font-size:1.15rem}
+  body.present .rgrid .bar-label .tag{width:26px;height:26px;flex:0 0 26px;font-size:.85rem}
+  body.present .rgrid .track{height:18px;border-radius:9px}
+  body.present .rgrid .fill{border-radius:9px}
+  body.present .rgrid .track.then{height:8px;margin-bottom:4px}
+  body.present .rgrid .bar{margin-bottom:14px}
+  body.present .rgrid .total{font-size:1rem;margin-bottom:40px}
+  @media (min-width:1200px){
+    body.present .rgrid.n3,body.present .rgrid.n5{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  body.present #results{margin-bottom:0}
+  body.present .spotcard{padding:24px 28px;margin-bottom:36px}
+  body.present .spotcard .t{font-size:2.2rem}
+  body.present .spotcard .lbl{font-size:.95rem}
+  body.present #qabadge.has{display:block}
   body.present .panel{border:none;background:transparent;padding:0}
   .exit-present{position:fixed;bottom:14px;right:14px;z-index:9;display:none;opacity:.4;font-size:.85rem}
   .exit-present:hover{opacity:1}
@@ -132,6 +206,23 @@ window.FIREBASE_CONFIG = {
   #joinbadge canvas,#joinbadge img{width:64px;height:64px;display:block;border-radius:4px}
   #joinbadge b{color:var(--ink);font:600 1rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
   body.present #joinbadge{display:flex}
+
+  /* ticker: open student questions streaming across the bottom of the projector */
+  .ticker{display:none;position:fixed;left:0;right:0;bottom:0;z-index:8;height:68px;
+    align-items:center;background:#1a1a19;color:#fff}
+  body.present.ticking .ticker{display:flex}
+  .ticker-label{flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 18px 0 22px;
+    font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f3c9b8;
+    border-right:1px solid rgba(255,255,255,.18)}
+  .ticker-view{flex:1 1 auto;min-width:0;height:100%;overflow:hidden}
+  .ticker-track{position:relative;height:100%}
+  .tick{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;white-space:nowrap;
+    will-change:transform;font-size:1.55rem;font-weight:500;padding:0 0 0 28px}
+  .tick::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--accent);margin:0 0 0 56px;vertical-align:middle}
+  body.present.ticking #joinbadge,body.present.ticking .exit-present{bottom:84px}
+  body.present.ticking #qabadge.has{bottom:126px}
+
 
   code.inline{background:#f0ece7;padding:1px 5px;border-radius:4px;font-size:.85em}
   kbd{background:#f0ece7;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;
@@ -143,6 +234,7 @@ window.FIREBASE_CONFIG = {
 <body>
 
 <button class="exit-present ghost" onclick="setPresent(false)">Exit present mode</button>
+<button id="qabadge"></button>
 <div id="joinbadge"><div id="qrmini"></div><div>join at<br><b id="badgecode"></b></div></div>
 <div class="wrap" id="app"><p class="muted">Loading…</p></div>
 
@@ -153,7 +245,10 @@ const BARS = ["var(--bar1)","var(--bar2)","var(--bar3)","var(--bar4)","var(--bar
 const LETTERS = "ABCDEFGHIJKLMNOP";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-window.setPresent = on => { document.body.classList.toggle("present", !!on); };
+window.setPresent = on => {
+  document.body.classList.toggle("present", !!on);
+  document.dispatchEvent(new Event("presentchange"));
+};
 function fatal(title, detail){ app.innerHTML = `<h1>${title}</h1><p class="sub">${detail}</p>`; }
 
 /* ---------- guard: config not filled in ---------- */
@@ -175,12 +270,12 @@ if (!window.FIREBASE_CONFIG || String(window.FIREBASE_CONFIG.apiKey).includes("P
               shows a message instead of a blank page ---------- */
 let initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs,
-    collection, onSnapshot, writeBatch, query, orderBy;
+    collection, onSnapshot, writeBatch, query, orderBy, where, deleteField;
 try {
   ({ initializeApp } = await import(SDK + "firebase-app.js"));
   ({ getAuth, signInAnonymously, onAuthStateChanged } = await import(SDK + "firebase-auth.js"));
   ({ getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs,
-     collection, onSnapshot, writeBatch, query, orderBy } = await import(SDK + "firebase-firestore.js"));
+     collection, onSnapshot, writeBatch, query, orderBy, where, deleteField } = await import(SDK + "firebase-firestore.js"));
 } catch (e) {
   fatal("Can't reach Firebase",
         "The page loaded but couldn't download the Firebase library. Check the network and reload.");
@@ -198,24 +293,50 @@ const ready = new Promise((resolve, reject) => {
 });
 
 /* ---------- data model -------------------------------------------------
-   polls/<ROOM>                     { owner, current, open, createdAt }
-   polls/<ROOM>/questions/<QID>     { question, options[], order }
+   polls/<ROOM>                     { owner, current, open, show[], title, reveal, qa, spot, ticker, createdAt }
+   polls/<ROOM>/questions/<QID>     { question, options[], order, standalone, earlier }
    polls/<ROOM>/questions/<QID>/votes/<uid>  { choice }
+   polls/<ROOM>/slides/<SID>        { title, qids[], order }
+   polls/<ROOM>/asks/<AID>          { text, by, at, status, shown }
 
    One ROOM per course or lecture — that's what the QR code points at.
    Questions live inside it, and students stay on the same page all hour.
+
+   The lecture steps through "items" in order: a question on its own, or a
+   slide that puts several questions on phones at once (new ones, or earlier
+   ones brought back to revisit). `current` is the item showing; `show` lists
+   the question ids students can answer right now. A question with
+   standalone:false is only shown inside slides. `earlier` is the tally saved
+   by Re-poll, shown as a "before" bar beside the new votes. Results stay hidden
+   on the projector and phones until `reveal` is set: by hand, or automatically
+   when voting closes on questions that have been re-polled.
+
+   Students can type questions in while `qa` is on. Each student reads only
+   their own; the instructor sees all, and `spot` is the one on the projector.
+   With `ticker` on, all open ones also stream across the bottom of it; `shown`
+   counts the passes, and a question drops off the ticker after PASSES of them.
 ---------------------------------------------------------------------- */
 const roomRef  = r          => doc(db, "polls", r);
 const qsRef    = r          => collection(db, "polls", r, "questions");
 const qRef     = (r, q)     => doc(db, "polls", r, "questions", q);
 const votesRef = (r, q)     => collection(db, "polls", r, "questions", q, "votes");
 const voteRef  = (r, q, u)  => doc(db, "polls", r, "questions", q, "votes", u);
+const slidesRef = r         => collection(db, "polls", r, "slides");
+const sRef     = (r, s)     => doc(db, "polls", r, "slides", s);
+const asksRef  = r          => collection(db, "polls", r, "asks");
+const askRef   = (r, a)     => doc(db, "polls", r, "asks", a);
+const MAX_ASK  = 500;       // characters; keep in step with firestore.rules
+const PASSES   = 3;         // times a student question crosses the ticker before it drops off
+const MAX_PER_SLIDE = 12;   // keep in step with firestore.rules
 
 function newCode(){
   const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from({length:4}, () => A[Math.floor(Math.random()*A.length)]).join("");
 }
 const newQid = () => "q" + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36);
+const newSid = () => "s" + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36);
+const newAid = () => "a" + Date.now().toString(36) + Math.floor(Math.random()*1e6).toString(36);
+const clock  = t => new Date(t || 0).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 const baseUrl = () => location.origin + location.pathname;
 const joinUrl = r => baseUrl() + "#p/" + r;
 
@@ -230,24 +351,193 @@ function tally(qdata, voteDocs){
   return { counts, total };
 }
 
-function resultsHTML(qdata, counts, total){
+// Results stay hidden until the instructor reveals them (closing voting on a
+// re-polled question does it automatically), so nobody is swayed by the room;
+// hidden, a question shows only its options and how many have answered.
+// Normally the leading option fills the track. Once a re-poll has saved an
+// earlier round, each option gets a pale "before" bar over a solid "after" bar,
+// both drawn as a share of their own round's responses so they sit on one scale.
+const hasEarlier = q => !!(q.earlier && q.earlier.total);
+const pctOf = (c, total) => total ? Math.round(c / total * 100) : 0;
+function barWidths(qdata, counts, total){
+  if (hasEarlier(qdata)) return counts.map(c => total ? c / total * 100 : 0);
   const max = Math.max(1, ...counts);
+  return counts.map(c => c / max * 100);
+}
+function earlierWidths(qdata){
+  if (!hasEarlier(qdata)) return null;
+  const e = qdata.earlier;
+  return (qdata.options || []).map((_, i) => (Number(e.counts && e.counts[i]) || 0) / e.total * 100);
+}
+function totalText(qdata, total, hidden){
+  const n = `${total} response${total === 1 ? "" : "s"}`;
+  if (hidden) return `${n} · results hidden for now`;
+  return hasEarlier(qdata) ? `before: ${qdata.earlier.total} · after: ${n}` : n;
+}
+function barNum(qdata, counts, total, i){
+  if (!hasEarlier(qdata)) return `<b>${counts[i]}</b> · ${pctOf(counts[i], total)}%`;
+  const e = qdata.earlier;
+  return `<span class="then">${pctOf(Number(e.counts && e.counts[i]) || 0, e.total)}%</span> &rarr; <b>${pctOf(counts[i], total)}%</b>`;
+}
+
+function resultsHTML(qdata, counts, total, hidden){
+  const w = barWidths(qdata, counts, total), ew = earlierWidths(qdata);
   const bars = (qdata.options || []).map((opt, i) => {
-    const pct = total ? Math.round(counts[i] / total * 100) : 0;
-    return `<div class="bar">
-      <div class="bar-top">
-        <span class="bar-label">
-          <span class="tag" style="background:${BARS[i % BARS.length]}">${LETTERS[i]}</span>
+    const color = BARS[i % BARS.length];
+    const label = `<span class="bar-label">
+          <span class="tag" style="background:${color}">${LETTERS[i]}</span>
           <span>${esc(opt)}</span>
-        </span>
-        <span class="bar-num"><b>${counts[i]}</b> · ${pct}%</span>
-      </div>
-      <div class="track"><div class="fill" style="width:${(counts[i]/max*100).toFixed(1)}%;background:${BARS[i % BARS.length]}"></div></div>
+        </span>`;
+    if (hidden) return `<div class="bar"><div class="bar-top">${label}</div></div>`;
+    return `<div class="bar">
+      <div class="bar-top">${label}<span class="bar-num">${barNum(qdata, counts, total, i)}</span></div>${
+      ew ? `<div class="track then"><div class="fill" style="width:${ew[i].toFixed(1)}%;background:${color}"></div></div>` : ""}
+      <div class="track"><div class="fill" style="width:${w[i].toFixed(1)}%;background:${color}"></div></div>
     </div>`;
   }).join("");
+  const key = !hidden && ew ? `<div class="key"><span><i class="then"></i>before</span><span><i></i>after</span></div>` : "";
   return `<div class="qtext">${esc(qdata.question || "Untitled question")}</div>
-          ${bars}
-          <div class="total">${total} response${total === 1 ? "" : "s"}</div>`;
+          <div class="bars">${key}${bars}</div>
+          <div class="total">${totalText(qdata, total, hidden)}</div>`;
+}
+
+// One block per question; several questions sit in a grid under the slide title.
+function slideResultsHTML(title, qs, tallies, hidden){
+  const blocks = qs.map((q, k) =>
+    `<div class="result" data-q="${esc(q.id)}">${resultsHTML(q, tallies[k].counts, tallies[k].total, hidden)}</div>`).join("");
+  return (title ? `<div class="stitle">${esc(title)}</div>` : "") +
+    (qs.length > 1 ? `<div class="rgrid n${Math.min(qs.length, 5)}">${blocks}</div>` : blocks);
+}
+
+/* ---------- importing a whole set of polls from plain text -------------
+   # Slide title       starts a slide; the questions below it go on it
+   ---                 ends the slide; questions after it stand on their own
+   Q: question text    a question, with its options on "- option" lines
+   Q: earlier text     inside a slide and with no options: brings back the
+                       question with that exact wording, to revisit it
+   // a note           ignored, so a deck can carry an answer key
+---------------------------------------------------------------------- */
+const sameText = (a, b) => a.trim().toLowerCase().replace(/\s+/g, " ") === b.trim().toLowerCase().replace(/\s+/g, " ");
+function parseDeck(text, existing){
+  const items = [], errors = [], fresh = [];
+  let slide = null, q = null;
+  const short = t => t.length > 50 ? t.slice(0, 48) + "…" : t;
+  function finishQ(){
+    if (!q) return;
+    if (!q.options.length && slide) {
+      q.reuse = fresh.find(x => x !== q && !x.reuse && sameText(x.question, q.question))
+             || existing.find(x => sameText(x.question, q.question));
+      if (!q.reuse) errors.push(`Line ${q.line}: no options, and no earlier question with this exact wording to bring back.`);
+    } else if (q.options.length < 2) errors.push(`Line ${q.line}: “${short(q.question)}” needs at least two options.`);
+    if (q.options.length > 8) errors.push(`Line ${q.line}: at most 8 options per question.`);
+    if (q.question.length >= 500) errors.push(`Line ${q.line}: questions must be under 500 characters.`);
+    q = null;
+  }
+  function finishSlide(){
+    if (!slide) return;
+    if (!slide.qs.length) errors.push(`Line ${slide.line}: slide “${short(slide.title)}” has no questions.`);
+    if (slide.qs.length > MAX_PER_SLIDE) errors.push(`Line ${slide.line}: at most ${MAX_PER_SLIDE} questions per slide.`);
+    slide = null;
+  }
+  text.split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim(), n = i + 1;
+    if (!line || line.startsWith("//")) return;
+    let m;
+    if (line.startsWith("#")) {
+      finishQ(); finishSlide();
+      slide = { kind: "s", title: line.replace(/^#+\s*/, "").slice(0, 299), qs: [], line: n };
+      items.push(slide);
+    } else if (/^-{3,}$/.test(line)) {
+      finishQ(); finishSlide();
+    } else if ((m = line.match(/^Q\s*[:.)]\s*(.+)$/i))) {
+      finishQ();
+      q = { question: m[1].trim(), options: [], line: n };
+      fresh.push(q);
+      if (slide) slide.qs.push(q); else items.push({ kind: "q", q });
+    } else if ((m = line.match(/^[-*•]\s*(.+)$/))) {
+      if (q) q.options.push(m[1].trim());
+      else errors.push(`Line ${n}: an option with no question above it.`);
+    } else {
+      errors.push(`Line ${n}: start questions with “Q:”, options with “-” and slides with “#”.`);
+    }
+  });
+  finishQ(); finishSlide();
+  const newCount = fresh.filter(x => !x.reuse).length;
+  return { items, errors, newCount, slideCount: items.filter(x => x.kind === "s").length,
+           revisits: fresh.length - newCount };
+}
+
+// A news ticker for the projector. Each question slides right to left on its
+// own track position; once it has fully left on the left it rejoins the back of
+// the line, beyond the right edge. New questions join the back the same way, so
+// nothing ever pops into view, and a lone question loops with a screen-wide gap.
+// onPass(id) fires each time a question finishes crossing the screen.
+function makeTicker(view, track, onPass){
+  const items = new Map();                     // id -> { el, pos }, in arrival order
+  const still = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  let last = 0, raf = 0, running = false;
+
+  const width = el => el.getBoundingClientRect().width;
+  const place = it => { it.el.style.transform = `translateX(${it.pos}px)`; };
+  const back  = () => {
+    let end = view.clientWidth;
+    for (const it of items.values()) end = Math.max(end, it.pos + width(it.el));
+    return end;
+  };
+  function frame(t){
+    raf = 0;
+    const C = view.clientWidth;
+    if (!running || !C) { running = false; return; }
+    const dt = last ? Math.min(0.1, (t - last) / 1000) : 0;
+    last = t;
+    const dx = Math.max(70, C / 16) * dt;          // ~16 s to cross the screen
+    for (const it of items.values()) it.pos -= dx;
+    for (const [id, it] of items)
+      if (it.pos + width(it.el) < 0) { it.pos = back(); if (onPass) onPass(id); }
+    items.forEach(place);
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    // list: [{id, text}] in the order they arrived
+    set(list){
+      const want = new Set(list.map(q => q.id));
+      for (const [id, it] of items) if (!want.has(id)) { it.el.remove(); items.delete(id); }
+      for (const q of list) {
+        if (items.has(q.id)) continue;
+        const el = document.createElement("span");
+        el.className = "tick";
+        el.textContent = q.text;
+        track.appendChild(el);
+        const it = { el, pos: back() };
+        items.set(q.id, it);
+        place(it);
+      }
+    },
+    run(on){
+      if (on === running) return;
+      running = on;
+      if (!on) { if (raf) cancelAnimationFrame(raf); raf = 0; return; }
+      // Each start lines the questions up just past the right edge, in arrival order
+      // (or from the left edge, standing still, for people who prefer less motion).
+      let pos = still ? 0 : view.clientWidth;
+      for (const it of items.values()) { it.pos = pos; pos += width(it.el); place(it); }
+      if (still) { running = false; return; }
+      last = 0;
+      raf = requestAnimationFrame(frame);
+    },
+  };
+}
+
+// Move the numbers in place so bars animate instead of flashing.
+function paintResult(block, qdata, counts, total, hidden){
+  if (!hidden) {
+    const w = barWidths(qdata, counts, total);
+    block.querySelectorAll(".bar").forEach((bar, i) => {
+      bar.querySelector(".track:not(.then) .fill").style.width = w[i].toFixed(1) + "%";
+      bar.querySelector(".bar-num").innerHTML = barNum(qdata, counts, total, i);
+    });
+  }
+  block.querySelector(".total").textContent = totalText(qdata, total, hidden);
 }
 
 /* ==================================================================== */
@@ -285,17 +575,37 @@ async function teacher(room){
       <div class="panel">
         <div class="row spread" style="margin-bottom:12px">
           <h2 style="margin:0">Questions</h2>
-          <button class="ghost small" id="addq">+ Add question</button>
+          <div class="row">
+            <button class="ghost small" id="addq">+ Add question</button>
+            <button class="ghost small" id="adds">+ Add slide</button>
+            <button class="ghost small" id="addimport">Import…</button>
+          </div>
         </div>
         <div id="qlist"></div>
         <div id="editor"></div>
+        <p class="warn" id="ruleswarn" hidden>Slides can't load: this Firebase project still has the
+          rules from before slides existed. Paste the new <code class="inline">firestore.rules</code>
+          into Firestore &rarr; Rules &rarr; Publish.</p>
       </div>
 
       <div class="panel" id="live">
         <p class="muted" style="margin:0">Nothing is showing to students yet.</p>
       </div>
+
+      <div class="panel" id="qa">
+        <div class="row spread" style="margin-bottom:12px">
+          <h2 style="margin:0">Student questions <span class="muted" id="qacount"></span></h2>
+          <div class="row">
+            <button class="small" id="qatoggle">Turn on</button>
+            <button class="ghost small" id="qaticker" title="Open questions scroll across the bottom of the Present view">Scroll on screen</button>
+            <button class="ghost small" id="qaclear">Clear all</button>
+          </div>
+        </div>
+        <div id="qalist"></div>
+      </div>
     </div>
 
+    <div id="spot"></div>
     <div class="panel" id="results"></div>`;
 
   document.getElementById("badgecode").textContent = room;
@@ -329,15 +639,41 @@ async function teacher(room){
 
   /* ---- state ---- */
   let roomData = { current:null, open:false };
-  let questions = [];          // [{id, ...data}]
-  let votes = [];
-  let editing = null;          // qid being edited, or "__new__"
-  let votesUnsub = null, boundQ = null;
+  let questions = [];          // [{id, ...data}], in lecture order
+  let slides = [];             // [{id, ...data}], in lecture order
+  let qLoaded = false, sLoaded = false;
+  let votes = {};              // qid -> [vote data], for whatever is showing
+  let editing = null;          // { kind: "q" | "s", id } — id is null for a new one
+  const voteUnsubs = new Map();
+  let asks = [], asksBlocked = false;   // student questions, oldest first
 
-  /* ---- editor ---- */
-  function openEditor(qid){
-    editing = qid;
-    const q = questions.find(x => x.id === qid);
+  const qById      = id => questions.find(q => q.id === id);
+  const standalone = q => q.standalone !== false;
+  const slideQids  = s => (s.qids || []).filter(id => qById(id));
+
+  // What the arrow keys walk through: stand-alone questions and slides, by order.
+  function items(){
+    return [
+      ...questions.filter(standalone).map(q => ({ kind:"q", id:q.id, order:q.order || 0, q })),
+      ...slides.map(s => ({ kind:"s", id:s.id, order:s.order || 0, s })),
+    ].sort((a, b) => a.order - b.order);
+  }
+  const showFor  = it => it.kind === "q" ? [it.id] : slideQids(it.s);
+  const titleFor = it => it.kind === "s" ? (it.s.title || "") : null;
+  // Sessions saved before slides existed have `current` but no `show`.
+  const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
+                          : roomData.current ? [roomData.current] : []).filter(id => qById(id));
+  function numbering(){
+    const m = {};
+    items().forEach((it, i) => { if (it.kind === "q") m[it.id] = i + 1; });
+    return m;
+  }
+
+  /* ---- editors ---- */
+  function openEditor(kind, id){
+    editing = { kind, id: id || null };
+    if (kind === "s") return openSlideEditor(id);
+    const q = id && qById(id);
     const opts = (q && q.options && q.options.length) ? q.options : ["", ""];
     document.getElementById("editor").innerHTML = `
       <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg)">
@@ -346,6 +682,9 @@ async function teacher(room){
         <div style="height:14px"></div>
         <label>Answer options</label>
         <div id="opts"></div>
+        <div style="height:6px"></div>
+        <label class="check"><input type="checkbox" id="slideonly" ${q && !standalone(q) ? "checked" : ""}>
+          <span>Only show this inside a slide <span class="muted">— skipped when you step through questions</span></span></label>
         <div class="row" style="margin-top:10px">
           <button class="ghost small" id="addopt">+ Add option</button>
           <button class="primary small" id="save">Save</button>
@@ -382,57 +721,329 @@ async function teacher(room){
   async function saveQuestion(){
     const options = readOpts().map(s => s.trim()).filter(Boolean);
     const question = document.getElementById("q").value.trim();
+    const isStandalone = !document.getElementById("slideonly").checked;
     if (!question)          return msg("Needs a prompt.");
     if (options.length < 2) return msg("Needs at least two options.");
-    if (editing === "__new__") {
-      const id = newQid();
-      await setDoc(qRef(room, id), { question, options, order: Date.now() });
+    if (!editing.id) {
+      await setDoc(qRef(room, newQid()), { question, options, order: Date.now(), standalone: isStandalone });
     } else {
-      await updateDoc(qRef(room, editing), { question, options });
+      await updateDoc(qRef(room, editing.id), { question, options, standalone: isStandalone });
     }
     closeEditor();
   }
-  function msg(t){
-    const m = document.getElementById("savemsg");
-    if (m) { m.textContent = t; setTimeout(() => { if (m) m.textContent = ""; }, 2200); }
+
+  function openSlideEditor(sid){
+    const s = sid && slides.find(x => x.id === sid);
+    const picked = new Set(s ? s.qids || [] : []);
+    const num = numbering();
+    document.getElementById("editor").innerHTML = `
+      <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg)">
+        <label for="st">Slide title (optional)</label>
+        <input type="text" id="st" value="${esc(s ? s.title : "")}" placeholder="e.g. Revisit: has anything changed?">
+        <div style="height:14px"></div>
+        <label>Questions on this slide</label>
+        ${questions.length ? `<div id="picks">${questions.map(q => `
+          <label class="check"><input type="checkbox" value="${esc(q.id)}" ${picked.has(q.id) ? "checked" : ""}>
+            <span>${num[q.id] ? `<b>${num[q.id]}.</b> ` : ""}${esc(q.question)}${
+              standalone(q) ? "" : ` <span class="muted">· slide only</span>`}</span></label>`).join("")}</div>`
+          : `<p class="muted" style="margin:0 0 8px">No questions yet — add some first.</p>`}
+        <p class="muted" style="margin:6px 0 0">Tick earlier questions to bring them back for a revisit.
+          For questions that belong only on this slide, add them with <b>+ Add question</b> and tick
+          <i>Only show this inside a slide</i>.</p>
+        <div class="row" style="margin-top:10px">
+          <button class="primary small" id="save">Save</button>
+          <button class="ghost small" id="cancel">Cancel</button>
+          <span class="muted" id="savemsg"></span>
+        </div>
+      </div>`;
+    document.getElementById("cancel").onclick = () => closeEditor();
+    document.getElementById("save").onclick = saveSlide;
+    document.getElementById("st").focus();
   }
 
-  document.getElementById("addq").onclick = () => openEditor("__new__");
+  async function saveSlide(){
+    const title = document.getElementById("st").value.trim();
+    const ticked = new Set([...document.querySelectorAll("#picks input:checked")].map(i => i.value));
+    const qids = questions.map(q => q.id).filter(id => ticked.has(id));
+    if (!qids.length)                return msg("Tick at least one question.");
+    if (qids.length > MAX_PER_SLIDE) return msg(`At most ${MAX_PER_SLIDE} questions per slide.`);
+    try {
+      if (!editing.id) await setDoc(sRef(room, newSid()), { title, qids, order: Date.now() });
+      else             await updateDoc(sRef(room, editing.id), { title, qids });
+    } catch {
+      return msg("Couldn't save — publish the updated firestore.rules in Firebase.");
+    }
+    closeEditor();
+  }
 
-  /* ---- actions on a question ---- */
-  window.__show = async qid => {
-    await updateDoc(roomRef(room), { current: qid, open: true });
-  };
-  window.__edit = qid => openEditor(qid);
-  window.__del  = async qid => {
-    if (!confirm("Delete this question and its votes?")) return;
+  function msg(t){
+    const m = document.getElementById("savemsg");
+    if (m) { m.textContent = t; setTimeout(() => { if (m) m.textContent = ""; }, 3200); }
+  }
+
+  document.getElementById("addq").onclick = () => openEditor("q", null);
+  document.getElementById("adds").onclick = () => openEditor("s", null);
+  document.getElementById("addimport").onclick = openImport;
+
+  function openImport(){
+    editing = { kind: "import", id: null };
+    document.getElementById("editor").innerHTML = `
+      <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg)">
+        <label for="deck">Paste a set of polls</label>
+        <textarea id="deck" spellcheck="false" style="min-height:260px;font:.88rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace"
+          placeholder="# First impressions&#10;Q: How convinced are you by the main claim?&#10;- Very&#10;- Somewhat&#10;- Not at all&#10;&#10;---&#10;Q: A question on its own&#10;- Yes&#10;- No"></textarea>
+        <p class="muted" style="margin:8px 0 0"><code class="inline"># Title</code> starts a slide ·
+          <code class="inline">---</code> ends it · <code class="inline">Q:</code> a question ·
+          <code class="inline">- </code> an option · a <code class="inline">Q:</code> with no options on a slide
+          brings back the earlier question with the same wording · <code class="inline">//</code> notes are ignored.
+          Everything is added after your current questions.</p>
+        <div class="row" style="margin-top:10px">
+          <button class="primary small" id="save" disabled>Import</button>
+          <button class="ghost small" id="cancel">Cancel</button>
+          <span class="muted" id="savemsg"></span>
+        </div>
+        <div id="deckcheck" class="muted" style="margin-top:8px"></div>
+      </div>`;
+    const ta = document.getElementById("deck"), btn = document.getElementById("save");
+    let parsed = null;
+    ta.oninput = () => {
+      parsed = parseDeck(ta.value, questions);
+      const box = document.getElementById("deckcheck");
+      const empty = !parsed.items.length;
+      btn.disabled = empty || parsed.errors.length > 0;
+      box.innerHTML = empty ? "" : parsed.errors.length
+        ? `<div class="warn" style="margin:0">${parsed.errors.slice(0, 8).map(esc).join("<br>")}${parsed.errors.length > 8 ? "<br>…" : ""}</div>`
+        : `Ready: ${parsed.newCount} new question${parsed.newCount === 1 ? "" : "s"}, ${parsed.slideCount} slide${parsed.slideCount === 1 ? "" : "s"}` +
+          (parsed.revisits ? `, ${parsed.revisits} brought back for a revisit.` : ".");
+    };
+    document.getElementById("cancel").onclick = () => closeEditor();
+    btn.onclick = async () => {
+      if (!parsed || parsed.errors.length) return;
+      btn.disabled = true;
+      try { await importDeck(parsed); closeEditor(); }
+      catch { btn.disabled = false; msg("Couldn't import. Check the connection, and that the latest firestore.rules are published."); }
+    };
+    ta.focus();
+  }
+
+  // Everything lands after the current questions, in the order it was written.
+  async function importDeck(parsed){
+    let order = Math.max(Date.now(), ...questions.map(q => q.order || 0), ...slides.map(x => x.order || 0)) + 1;
+    const ids = new Map(), writes = [];
+    let n = 0;
+    const idFor = q => {
+      const target = q.reuse || q;
+      if (target.id) return target.id;                       // an existing question
+      if (!ids.has(target)) ids.set(target, newQid() + (n++).toString(36));
+      return ids.get(target);
+    };
+    const addQ = (q, standalone) => {
+      if (q.reuse) return;
+      writes.push([qRef(room, idFor(q)), { question: q.question, options: q.options, order: order++, standalone }]);
+    };
+    for (const it of parsed.items) {
+      if (it.kind === "q") { addQ(it.q, true); continue; }
+      it.qs.forEach(q => addQ(q, false));
+      writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title, qids: it.qs.map(idFor), order: order++ }]);
+    }
+    for (let i = 0; i < writes.length; i += 400) {
+      const batch = writeBatch(db);
+      writes.slice(i, i + 400).forEach(([ref, data]) => batch.set(ref, data));
+      await batch.commit();
+    }
+  }
+
+  /* ---- actions on an item ---- */
+  // A slide whose questions were all asked earlier in the lecture is the second
+  // time around.
+  function isRevisit(list, i){
+    const ids = list[i] && list[i].kind === "s" ? showFor(list[i]) : [];
+    return ids.length > 0 && ids.every(qid => list.slice(0, i).some(prev => showFor(prev).includes(qid)));
+  }
+  // Start a fresh round on a question: keep this round's tally as `earlier`
+  // (the "before"), then clear the votes so everyone answers again.
+  async function newRound(qid){
+    const vs = await getDocs(votesRef(room, qid));
+    const { counts, total } = tally(qById(qid), vs.docs.map(d => d.data()));
+    await updateDoc(qRef(room, qid), { earlier: { counts, total, at: Date.now() } });
+    const batch = writeBatch(db);
+    vs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+  async function showItem(id){
+    const list = items(), i = list.findIndex(x => x.id === id), it = list[i];
+    if (!it) return;
+    const ids = showFor(it);
+    // The first time a revisit slide comes up, its second round starts by itself.
+    // Questions that already have a second round (you came back to the slide) keep it.
+    if (isRevisit(list, i))
+      for (const qid of ids) if (!qById(qid).earlier) await newRound(qid);
+    await updateDoc(roomRef(room), { current: it.id, show: ids, title: titleFor(it), open: true, reveal: false });
+  }
+  async function wipeVotes(qid){
     const vs = await getDocs(votesRef(room, qid));
     const batch = writeBatch(db);
     vs.forEach(d => batch.delete(d.ref));
     await batch.commit();
+  }
+
+  window.__show = showItem;
+  window.__edit = qid => openEditor("q", qid);
+  window.__editSlide = sid => openEditor("s", sid);
+  window.__del  = async qid => {
+    if (!confirm("Delete this question and its votes?")) return;
+    await wipeVotes(qid);
     await deleteDoc(qRef(room, qid));
-    if (roomData.current === qid) await updateDoc(roomRef(room), { current: null, open: false });
+    for (const s of slides)
+      if ((s.qids || []).includes(qid))
+        await updateDoc(sRef(room, s.id), { qids: s.qids.filter(x => x !== qid) });
+    if (roomData.current === qid) await hideAll();
+  };
+  window.__delSlide = async sid => {
+    if (!confirm("Delete this slide? Its questions and their votes are kept.")) return;
+    const s = slides.find(x => x.id === sid);
+    await deleteDoc(sRef(room, sid));
+    // A slide-only question that was on no other slide goes back to the main
+    // list, so nothing ends up unreachable.
+    for (const qid of (s && s.qids) || []) {
+      const q = qById(qid);
+      if (q && !standalone(q) && !slides.some(x => x.id !== sid && (x.qids || []).includes(qid)))
+        await updateDoc(qRef(room, qid), { standalone: true });
+    }
+    if (roomData.current === sid) await hideAll();
+  };
+  window.__move = async (id, delta) => {
+    const list = items();
+    const i = list.findIndex(x => x.id === id), j = i + delta;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    const a = list[i], b = list[j];
+    const ref = it => it.kind === "q" ? qRef(room, it.id) : sRef(room, it.id);
+    const batch = writeBatch(db);
+    batch.update(ref(a), { order: a.order === b.order ? b.order + delta : b.order });
+    batch.update(ref(b), { order: a.order });
+    await batch.commit();
   };
 
+  // Results stay hidden while anyone can still vote. Closing the second round
+  // (questions that have been re-polled) reveals before and after together;
+  // closing a first round keeps it hidden, so it can't sway the re-test.
   async function toggleOpen(){
     if (!roomData.current) return;
-    await updateDoc(roomRef(room), { open: !roomData.open });
+    const closing = !!roomData.open, ids = liveIds();
+    const patch = { open: !closing };
+    if (!closing) patch.reveal = false;
+    else if (ids.length && ids.every(id => qById(id).earlier)) patch.reveal = true;
+    await updateDoc(roomRef(room), patch);
+  }
+  async function toggleReveal(){
+    if (!roomData.current) return;
+    await updateDoc(roomRef(room), { reveal: !roomData.reveal });
   }
   async function clearVotes(){
-    if (!roomData.current) return;
-    const vs = await getDocs(votesRef(room, roomData.current));
-    const batch = writeBatch(db);
-    vs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
+    const ids = liveIds();
+    if (!ids.length) return;
+    if (!confirm(ids.length > 1 ? `Clear the votes on all ${ids.length} questions showing?`
+                                : "Clear the votes on this question?")) return;
+    for (const id of ids) {
+      await wipeVotes(id);
+      if (qById(id) && qById(id).earlier) await updateDoc(qRef(room, id), { earlier: deleteField() });
+    }
+    if (roomData.reveal) await updateDoc(roomRef(room), { reveal: false });
+  }
+  // Re-poll: keep the current result as "before", then let the class vote again.
+  async function repoll(){
+    const ids = liveIds();
+    if (!ids.length) return;
+    if (!confirm(`Save the current result${ids.length > 1 ? "s" : ""} for comparison, clear the votes, and reopen voting?`)) return;
+    for (const id of ids) await newRound(id);
+    await updateDoc(roomRef(room), { open: true, reveal: false });
   }
   async function step(delta){
-    const i = questions.findIndex(q => q.id === roomData.current);
-    const next = questions[(i < 0 ? 0 : i + delta)];
-    if (next) await updateDoc(roomRef(room), { current: next.id, open: true });
+    const list = items();
+    const i = list.findIndex(x => x.id === roomData.current);
+    const next = list[(i < 0 ? 0 : i + delta)];
+    if (next) await showItem(next.id);
   }
   async function hideAll(){
-    await updateDoc(roomRef(room), { current: null, open: false });
+    await updateDoc(roomRef(room), { current: null, show: [], title: null, open: false, reveal: false });
   }
+
+  /* ---- student questions ---- */
+  document.getElementById("qatoggle").onclick = () =>
+    updateDoc(roomRef(room), { qa: !roomData.qa });
+  document.getElementById("qaticker").onclick = () =>
+    updateDoc(roomRef(room), { ticker: !roomData.ticker });
+
+  // The ticker band lives outside #app so it can pin to the bottom of the screen.
+  const band = document.createElement("div");
+  band.className = "ticker";
+  band.innerHTML = `<span class="ticker-label">From the class</span>
+    <div class="ticker-view"><div class="ticker-track"></div></div>`;
+  document.body.appendChild(band);
+  // Each finished pass is saved on the question, so leaving Present mode and
+  // coming back doesn't start the count over.
+  const tick = makeTicker(band.querySelector(".ticker-view"), band.querySelector(".ticker-track"), id => {
+    const a = asks.find(x => x.id === id);
+    if (a) updateDoc(askRef(room, id), { shown: (a.shown || 0) + 1 }).catch(() => {});
+  });
+  // Open questions stream across in Present mode, apart from one already up on its
+  // own, until they've crossed the screen PASSES times.
+  function syncTicker(){
+    const items = asks.filter(a => a.status !== "answered" && a.id !== roomData.spot && (a.shown || 0) < PASSES);
+    tick.set(items);
+    const on = !!roomData.ticker && items.length > 0;
+    document.body.classList.toggle("ticking", on);
+    tick.run(on && document.body.classList.contains("present"));
+    fitPresent();     // the ticker and the corner badge take room from the slide
+  }
+  document.addEventListener("presentchange", () => { syncTicker(); fitPresent(); });
+  addEventListener("resize", () => fitPresent());
+
+  // On the projector a slide must fit on one screen: the join badge, the buttons
+  // in the corner and the ticker are pinned over the bottom of the page, so a slide
+  // that runs under them gets covered. Shrink the results (CSS zoom, so text
+  // re-wraps) to the largest size that ends above all of those, but no smaller than half.
+  function fitPresent(){
+    const box = document.getElementById("results");
+    box.style.zoom = "";
+    if (!document.body.classList.contains("present") || !box.offsetHeight) return;
+    const pinned = [...document.querySelectorAll("#joinbadge, #qabadge, .exit-present, .ticker")]
+      .map(el => el.getBoundingClientRect()).filter(r => r.height > 0);
+    const floor = Math.min(innerHeight, ...pinned.map(r => r.top)) - 12;
+    const fits = z => { box.style.zoom = z; return box.getBoundingClientRect().bottom <= floor; };
+    if (fits(1)) return;
+    // Text re-wraps as it shrinks, so search for the largest size that fits.
+    let lo = 0.5, hi = 1;
+    for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+    box.style.zoom = lo;
+  }
+  document.getElementById("qaclear").onclick = async () => {
+    if (!asks.length || !confirm(`Delete all ${asks.length} student question${asks.length === 1 ? "" : "s"}?`)) return;
+    for (let i = 0; i < asks.length; i += 400) {
+      const batch = writeBatch(db);
+      asks.slice(i, i + 400).forEach(a => batch.delete(askRef(room, a.id)));
+      await batch.commit();
+    }
+    if (roomData.spot) await updateDoc(roomRef(room), { spot: null });
+  };
+  document.getElementById("qabadge").onclick = () => {
+    setPresent(false);
+    document.getElementById("qa").scrollIntoView({ block: "start" });
+  };
+  window.__spot = aid =>
+    updateDoc(roomRef(room), { spot: roomData.spot === aid ? null : aid });
+  window.__answered = async aid => {
+    const a = asks.find(x => x.id === aid);
+    if (!a) return;
+    await updateDoc(askRef(room, aid), { status: a.status === "answered" ? null : "answered" });
+    if (roomData.spot === aid) await updateDoc(roomRef(room), { spot: null });
+  };
+  window.__rescroll = aid => updateDoc(askRef(room, aid), { shown: 0 });
+  window.__delAsk = async aid => {
+    if (!confirm("Delete this student question?")) return;
+    await deleteDoc(askRef(room, aid));
+    if (roomData.spot === aid) await updateDoc(roomRef(room), { spot: null });
+  };
 
   /* ---- keyboard, for presenting ---- */
   addEventListener("keydown", e => {
@@ -441,6 +1052,8 @@ async function teacher(room){
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
     else if (e.key === " ") { e.preventDefault(); toggleOpen(); }
+    else if (e.key === "r" || e.key === "R") toggleReveal();
+    else if (e.key === "p" || e.key === "P") repoll();
     else if (e.key === "Escape") setPresent(false);
   });
 
@@ -448,25 +1061,64 @@ async function teacher(room){
   onSnapshot(roomRef(room), s => {
     if (!s.exists()) return;
     roomData = s.data();
-    bindVotes(roomData.current);
-    drawList(); drawLive(); drawResults();
+    refresh();
   });
 
   onSnapshot(query(qsRef(room), orderBy("order")), s => {
     questions = s.docs.map(d => ({ id: d.id, ...d.data() }));
-    drawList(); drawLive(); drawResults();
+    qLoaded = true;
+    refresh();
   });
 
-  function bindVotes(qid){
-    if (qid === boundQ) return;
-    boundQ = qid;
-    if (votesUnsub) { votesUnsub(); votesUnsub = null; }
-    votes = [];
-    if (!qid) return;
-    votesUnsub = onSnapshot(votesRef(room, qid), s => {
-      votes = s.docs.map(d => d.data());
-      drawLive(); drawResults();
-    });
+  onSnapshot(query(slidesRef(room), orderBy("order")), s => {
+    slides = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    sLoaded = true;
+    refresh();
+  }, () => {
+    // Almost always: the project still has the rules from before slides.
+    sLoaded = true;
+    document.getElementById("ruleswarn").hidden = false;
+    refresh();
+  });
+
+  onSnapshot(asksRef(room), s => {
+    asks = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.at || 0) - (b.at || 0));
+    drawQA(); drawSpot(); syncTicker();
+  }, () => {
+    // The project still has rules from before student questions.
+    asksBlocked = true;
+    drawQA();
+  });
+
+  function refresh(){
+    bindVotes(liveIds());
+    drawList(); drawLive(); drawResults(); drawQA(); drawSpot(); syncTicker();
+    syncShow();
+  }
+
+  function bindVotes(ids){
+    for (const [id, unsub] of voteUnsubs)
+      if (!ids.includes(id)) { unsub(); voteUnsubs.delete(id); delete votes[id]; }
+    for (const id of ids) {
+      if (voteUnsubs.has(id)) continue;
+      votes[id] = [];
+      voteUnsubs.set(id, onSnapshot(votesRef(room, id), s => {
+        votes[id] = s.docs.map(d => d.data());
+        drawLive(); drawResults();
+      }));
+    }
+  }
+
+  // If a slide is edited while it's showing, push the change to phones.
+  let syncing = false;
+  async function syncShow(){
+    if (!qLoaded || !sLoaded || syncing || !roomData.current) return;
+    const it = items().find(x => x.id === roomData.current);
+    if (!it) return;
+    const show = showFor(it), title = titleFor(it);
+    if (JSON.stringify(show) === JSON.stringify(roomData.show || null) && (roomData.title ?? null) === title) return;
+    syncing = true;
+    try { await updateDoc(roomRef(room), { show, title }); } finally { syncing = false; }
   }
 
   /* ---- rendering ---- */
@@ -476,99 +1128,237 @@ async function teacher(room){
   let listSig = null, liveSig = null;
   function drawList(){
     const el = document.getElementById("qlist");
-    const s = JSON.stringify([questions.map(q => [q.id, q.question, (q.options||[]).length]), roomData.current]);
+    const list = items();
+    const num = numbering();
+    const onSlides = new Set(slides.flatMap(s => s.qids || []));
+    const loose = questions.filter(q => !standalone(q) && !onSlides.has(q.id));
+    const s = JSON.stringify([
+      list.map(it => it.kind === "q"
+        ? [it.id, it.q.question, (it.q.options || []).length]
+        : [it.id, it.s.title, slideQids(it.s).map(id => [id, qById(id).question, standalone(qById(id))])]),
+      loose.map(q => [q.id, q.question, (q.options || []).length]),
+      roomData.current]);
     if (s === listSig) return;
     listSig = s;
-    if (!questions.length) {
+    if (!list.length && !loose.length) {
       el.innerHTML = `<p class="muted" style="margin:0">No questions yet. Add them before class — you can prepare the whole lecture here.</p>`;
       return;
     }
-    el.innerHTML = questions.map((q, i) => `
-      <div class="qitem ${q.id === roomData.current ? "live" : ""}">
+    el.innerHTML = list.map((it, i) => {
+      const live = it.id === roomData.current;
+      const show = `<button class="small ${live ? "ghost" : "primary"}"
+                  onclick="__show('${it.id}')">${live ? "Reshow" : "Show"}</button>`;
+      const moves = `<button class="small ghost move" onclick="__move('${it.id}',-1)" ${i === 0 ? "disabled" : ""} title="Move up">&uarr;</button>
+          <button class="small ghost move" onclick="__move('${it.id}',1)" ${i === list.length - 1 ? "disabled" : ""} title="Move down">&darr;</button>`;
+      if (it.kind === "q") return `
+      <div class="qitem ${live ? "live" : ""}">
         <span class="n">${i + 1}</span>
         <span class="body">
-          <span class="t">${esc(q.question)}</span>
-          <span class="m">${(q.options || []).length} options${q.id === roomData.current ? " · showing now" : ""}</span>
+          <span class="t">${esc(it.q.question)}</span>
+          <span class="m">${(it.q.options || []).length} options${live ? " · showing now" : ""}</span>
         </span>
         <span class="acts">
-          <button class="small ${q.id === roomData.current ? "ghost" : "primary"}"
-                  onclick="__show('${q.id}')">${q.id === roomData.current ? "Reshow" : "Show"}</button>
-          <button class="small ghost" onclick="__edit('${q.id}')">Edit</button>
-          <button class="small ghost" onclick="__del('${q.id}')">Delete</button>
+          ${show}
+          <button class="small ghost" onclick="__edit('${it.id}')">Edit</button>
+          <button class="small ghost" onclick="__del('${it.id}')">Delete</button>
+          ${moves}
         </span>
-      </div>`).join("");
+      </div>`;
+      const ids = slideQids(it.s);
+      return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <div class="body">
+          <span class="t">${esc(it.s.title || "Untitled slide")}</span>
+          <span class="m">Slide · ${ids.length} question${ids.length === 1 ? "" : "s"}${live ? " · showing now" : ""}</span>
+          <ul class="sub">${ids.map(id => `
+            <li><span>${num[id] ? "#" + num[id] : "&bull;"}</span><span>${esc(qById(id).question)}</span>${
+              standalone(qById(id)) ? "" : `<button class="ghost" onclick="__edit('${id}')">Edit</button>`}</li>`).join("")}
+          </ul>
+        </div>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__editSlide('${it.id}')">Edit</button>
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Delete</button>
+          ${moves}
+        </span>
+      </div>`;
+    }).join("") + (loose.length ? `
+      <div class="loose">
+        <p class="muted" style="margin:0 0 8px">Slide-only questions that aren't on a slide yet.
+          Add them to one with <b>Edit</b> on a slide, or <b>+ Add slide</b>.</p>
+        ${loose.map(q => `
+        <div class="qitem">
+          <span class="n">&ndash;</span>
+          <span class="body">
+            <span class="t">${esc(q.question)}</span>
+            <span class="m">${(q.options || []).length} options · slide only</span>
+          </span>
+          <span class="acts">
+            <button class="small ghost" onclick="__edit('${q.id}')">Edit</button>
+            <button class="small ghost" onclick="__del('${q.id}')">Delete</button>
+          </span>
+        </div>`).join("")}
+      </div>` : "");
   }
 
   function drawLive(){
     const el = document.getElementById("live");
-    const i = questions.findIndex(q => q.id === roomData.current);
-    const { total } = tally(questions[i], votes);
-    const s = JSON.stringify([roomData.current, roomData.open, i, questions.length]);
+    const list = items();
+    const i = list.findIndex(x => x.id === roomData.current);
+    const it = list[i];
+    const ids = liveIds();
+    const totals = ids.map(id => tally(qById(id), votes[id] || []).total);
+    const countText = ids.length > 1
+      ? `responses ${totals.join(" · ")}`
+      : `${totals[0] || 0} response${totals[0] === 1 ? "" : "s"}`;
+    // A slide that brings back questions asked earlier is the second time around:
+    // nudge toward Re-poll until it's been pressed.
+    const revisit = i >= 0 && isRevisit(list, i) && !ids.every(id => qById(id).earlier);
+    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, revisit, i, list.length, ids.length]);
 
     // Only the response count moves as votes land — update it in place so
     // the controls underneath the instructor's cursor stay put.
     if (s === liveSig) {
       const c = document.getElementById("livecount");
-      if (c) c.textContent = `${total} response${total === 1 ? "" : "s"}`;
+      if (c) c.textContent = countText;
       return;
     }
     liveSig = s;
 
     if (!roomData.current) {
       el.innerHTML = `<p class="muted" style="margin:0">Nothing is showing to students — they see a "waiting" screen.
-        Hit <b>Show</b> on a question to push it to their phones.</p>`;
+        Hit <b>Show</b> on a question or slide to push it to their phones.</p>`;
       return;
     }
+    const what = it && it.kind === "s"
+      ? `Slide ${i + 1} of ${list.length} · ${ids.length} question${ids.length === 1 ? "" : "s"}`
+      : i >= 0 ? `Question ${i + 1} of ${list.length}` : "Showing";
     el.innerHTML = `
       <div class="row spread">
         <div class="row">
           <span class="pill ${roomData.open ? "open" : "closed"}">${roomData.open ? "open" : "closed"}</span>
-          <span class="muted">Question ${i + 1} of ${questions.length} ·
-            <span id="livecount">${total} response${total === 1 ? "" : "s"}</span></span>
+          <span class="pill closed">${roomData.reveal ? "results showing" : "results hidden"}</span>
+          <span class="muted">${what} · <span id="livecount">${countText}</span></span>
         </div>
         <div class="row">
           <button class="small" id="prev" ${i <= 0 ? "disabled" : ""}>&larr; Prev</button>
-          <button class="small" id="next" ${i < 0 || i >= questions.length - 1 ? "disabled" : ""}>Next &rarr;</button>
+          <button class="small" id="next" ${i < 0 || i >= list.length - 1 ? "disabled" : ""}>Next &rarr;</button>
           <button class="small ${roomData.open ? "" : "primary"}" id="toggle">${roomData.open ? "Close voting" : "Open voting"}</button>
+          <button class="small ghost" id="reveal">${roomData.reveal ? "Hide results" : "Show results"}</button>
+          <button class="small ${revisit ? "primary" : "ghost"}" id="repoll" ${ids.length ? "" : "disabled"}
+                  title="Save these results as the first round, clear the votes and reopen voting">Re-poll</button>
           <button class="small ghost" id="clear">Clear votes</button>
           <button class="small ghost" id="hide">Hide</button>
         </div>
       </div>
+      ${revisit ? `<p class="warn" style="margin:12px 0 0">These questions were asked earlier. Press <b>Re-poll</b> (or <kbd>P</kbd>)
+        to start the second round; closing voting afterwards shows before and after together.</p>` : ""}
       <p class="muted" style="margin:12px 0 0">
-        While presenting: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> change question,
-        <kbd>space</kbd> opens or closes voting, <kbd>esc</kbd> leaves present mode.</p>`;
+        Results stay hidden while voting is open. While presenting: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> change question or slide,
+        <kbd>space</kbd> opens or closes voting, <kbd>R</kbd> shows or hides results, <kbd>P</kbd> re-polls,
+        <kbd>esc</kbd> leaves present mode. A slide that brings back earlier questions starts their second round
+        by itself; closing its voting shows before and after.</p>`;
     document.getElementById("prev").onclick   = () => step(-1);
     document.getElementById("next").onclick   = () => step(1);
     document.getElementById("toggle").onclick = toggleOpen;
+    document.getElementById("reveal").onclick = toggleReveal;
+    document.getElementById("repoll").onclick = repoll;
     document.getElementById("clear").onclick  = clearVotes;
     document.getElementById("hide").onclick   = hideAll;
   }
 
-  // Rebuild the results block only when the question changes; when just the
+  // Unanswered first, in the order they came in; answered ones sink and fade.
+  let qaSig = null;
+  function drawQA(){
+    const on = !!roomData.qa;
+    const open = asks.filter(a => a.status !== "answered");
+    const badge = document.getElementById("qabadge");
+    badge.classList.toggle("has", open.length > 0);
+    badge.textContent = `${open.length} student question${open.length === 1 ? "" : "s"}`;
+
+    const s = JSON.stringify([on, !!roomData.ticker, asksBlocked, roomData.spot || null, asks.map(a => [a.id, a.text, a.status || "", a.at, a.shown || 0])]);
+    if (s === qaSig) return;
+    qaSig = s;
+    const toggle = document.getElementById("qatoggle");
+    toggle.textContent = on ? "Stop taking questions" : "Let students ask";
+    toggle.className = "small" + (on ? "" : " primary");
+    document.getElementById("qaticker").textContent = roomData.ticker ? "Stop scrolling on screen" : "Scroll on screen";
+    document.getElementById("qaclear").disabled = !asks.length;
+    document.getElementById("qacount").textContent = open.length ? `· ${open.length} open` : "";
+
+    const el = document.getElementById("qalist");
+    if (asksBlocked) {
+      el.innerHTML = `<p class="warn" style="margin:0">Student questions can't load: this Firebase project still has
+        older rules. Paste the new <code class="inline">firestore.rules</code> into Firestore &rarr; Rules &rarr; Publish.</p>`;
+      return;
+    }
+    if (!asks.length) {
+      el.innerHTML = `<p class="muted" style="margin:0">${on
+        ? "Students can type questions on their phones now. They show up here, anonymously."
+        : "Turn this on and students get a box on their phones to type questions in, anonymously. Only you see them."}</p>`;
+      return;
+    }
+    const ordered = [...open, ...asks.filter(a => a.status === "answered")];
+    el.innerHTML = ordered.map(a => {
+      const done = a.status === "answered", here = roomData.spot === a.id;
+      const passes = Math.min(a.shown || 0, PASSES), scrolled = passes >= PASSES;
+      return `
+      <div class="ask ${done ? "done" : ""} ${here ? "onscreen" : ""}">
+        <span class="body">
+          <span class="t">${esc(a.text)}</span>
+          <span class="m">${clock(a.at)}${done ? " · answered" : ""}${here ? " · on screen" : ""}${
+            passes && !done ? ` · scrolled ${passes}/${PASSES}` : ""}</span>
+        </span>
+        <span class="acts">
+          ${done ? "" : `<button class="small ${here ? "ghost" : "primary"}" onclick="__spot('${a.id}')">${here ? "Take off screen" : "Show on screen"}</button>`}
+          ${scrolled && !done ? `<button class="small ghost" onclick="__rescroll('${a.id}')">Scroll again</button>` : ""}
+          <button class="small ghost" onclick="__answered('${a.id}')">${done ? "Reopen" : "Answered"}</button>
+          <button class="small ghost" onclick="__delAsk('${a.id}')">Delete</button>
+        </span>
+      </div>`;
+    }).join("");
+  }
+
+  // The student question on screen sits above the poll results, in present mode too.
+  let spotSig = null;
+  function drawSpot(){
+    const a = roomData.spot && asks.find(x => x.id === roomData.spot);
+    const s = a ? JSON.stringify([a.id, a.text]) : "";
+    if (s === spotSig) return;
+    spotSig = s;
+    document.getElementById("spot").innerHTML = a ? `
+      <div class="spotcard">
+        <div><div class="lbl">Question from the class</div><div class="t">${esc(a.text)}</div></div>
+        <button class="small ghost" onclick="__answered('${a.id}')" title="Mark answered and take it off the screen">Done</button>
+      </div>` : "";
+  }
+
+  // Rebuild the results block only when what's showing changes; when just the
   // numbers move, update in place so bars animate instead of flashing.
   let shape = null;
   function drawResults(){
     const box = document.getElementById("results");
-    const q = questions.find(x => x.id === roomData.current);
-    if (!q) {
+    const qs = (roomData.current ? liveIds() : []).map(qById);
+    app.classList.toggle("wide", qs.length > 2);
+    if (!qs.length) {
       shape = null;
       box.innerHTML = `<p class="muted" style="margin:0">No question is live.</p>`;
       return;
     }
-    const { counts, total } = tally(q, votes);
-    const nextShape = JSON.stringify([q.id, q.question, q.options]);
+    const hidden = !roomData.reveal;
+    const tallies = qs.map(q => tally(q, votes[q.id] || []));
+    const nextShape = JSON.stringify([roomData.title || "", hidden, qs.map(q => [q.id, q.question, q.options, q.earlier || null])]);
     if (nextShape !== shape) {
       shape = nextShape;
-      box.innerHTML = resultsHTML(q, counts, total);
+      box.innerHTML = slideResultsHTML(roomData.title, qs, tallies, hidden);
+      fitPresent();
       return;
     }
-    const max = Math.max(1, ...counts);
-    box.querySelectorAll(".bar").forEach((bar, i) => {
-      const pct = total ? Math.round(counts[i] / total * 100) : 0;
-      bar.querySelector(".fill").style.width = (counts[i] / max * 100).toFixed(1) + "%";
-      bar.querySelector(".bar-num").innerHTML = `<b>${counts[i]}</b> · ${pct}%`;
+    qs.forEach((q, k) => {
+      const block = box.querySelector(`[data-q="${q.id}"]`);
+      if (block) paintResult(block, q, tallies[k].counts, tallies[k].total, hidden);
     });
-    box.querySelector(".total").textContent = `${total} response${total === 1 ? "" : "s"}`;
   }
 }
 
@@ -577,11 +1367,24 @@ async function teacher(room){
 /* ==================================================================== */
 async function student(room){
   await ready;
-  app.innerHTML = `<div id="s"><p class="muted">Connecting…</p></div>`;
+  app.innerHTML = `<div id="s"><p class="muted">Connecting…</p></div>
+    <div class="askzone" id="askzone" hidden>
+      <div id="askform" hidden>
+        <label for="askt">Ask your instructor a question</label>
+        <textarea id="askt" maxlength="${MAX_ASK}" placeholder="Anonymous: your instructor sees the question, not who asked."></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="primary small" id="asksend">Send question</button>
+          <span class="muted" id="askmsg"></span>
+        </div>
+      </div>
+      <div id="mine"></div>
+    </div>`;
   const el = document.getElementById("s");
 
-  let roomData = null, qdata = null, mine = null, votes = [];
-  let boundQ = null, unsubs = [];
+  let roomData = null;
+  let qdata = {}, mine = {}, votes = {};      // keyed by question id
+  let qKey = null, qUnsubs = [], vKey = null, vUnsubs = [];
+  let failed = false;
 
   onSnapshot(roomRef(room), s => {
     if (!s.exists()) {
@@ -589,61 +1392,157 @@ async function student(room){
       return;
     }
     roomData = s.data();
-    bind(roomData.current);
+    bind();
     draw();
+    drawAsk();
   });
 
-  function bind(qid){
-    if (qid === boundQ) return;
-    boundQ = qid;
-    unsubs.forEach(u => u()); unsubs = [];
-    qdata = null; mine = null; votes = [];
-    if (!qid) { draw(); return; }
-    unsubs.push(onSnapshot(qRef(room, qid), s => { qdata = s.exists() ? s.data() : null; draw(); }));
-    unsubs.push(onSnapshot(voteRef(room, qid, uid), s => { mine = s.exists() ? s.data().choice : null; draw(); }));
-    unsubs.push(onSnapshot(votesRef(room, qid), s => { votes = s.docs.map(d => d.data()); draw(); }));
+  // Sessions saved before slides existed have `current` but no `show`.
+  const showIds = () => !roomData || !roomData.current ? []
+    : Array.isArray(roomData.show) ? roomData.show : [roomData.current];
+
+  function bind(){
+    const ids = showIds();
+    const k = JSON.stringify(ids);
+    if (k !== qKey) {
+      qKey = k;
+      qUnsubs.forEach(u => u()); qUnsubs = [];
+      qdata = {}; mine = {}; failed = false;
+      for (const id of ids) {
+        qUnsubs.push(onSnapshot(qRef(room, id), s => { qdata[id] = s.exists() ? s.data() : null; draw(); }));
+        qUnsubs.push(onSnapshot(voteRef(room, id, uid), s => { mine[id] = s.exists() ? s.data().choice : null; draw(); }));
+      }
+    }
+    // Classmates' votes are only needed once voting closes and the results are
+    // revealed, so phones don't re-download the tally on every tap.
+    const showing = !roomData.open && !!roomData.reveal;
+    const vk = showing ? k : "none";
+    if (vk !== vKey) {
+      vKey = vk;
+      vUnsubs.forEach(u => u()); vUnsubs = [];
+      votes = {};
+      if (showing) for (const id of ids)
+        vUnsubs.push(onSnapshot(votesRef(room, id), s => { votes[id] = s.docs.map(d => d.data()); draw(); }));
+    }
   }
 
-  window.__vote = async i => {
-    if (!roomData || !roomData.open || !boundQ) return;
-    await setDoc(voteRef(room, boundQ, uid), { choice: i, at: Date.now() });
+  window.__vote = async (qid, i) => {
+    if (!roomData || !roomData.open || !showIds().includes(qid)) return;
+    try {
+      await setDoc(voteRef(room, qid, uid), { choice: i, at: Date.now() });
+      if (failed) { failed = false; draw(); }
+    } catch {
+      failed = true; draw();
+    }
   };
+
+  /* ---- typing in a question ---- */
+  // Only this student's own questions are readable, so the query must ask for exactly those.
+  let myAsks = [], asksOk = true, askSig = null;
+  onSnapshot(query(asksRef(room), where("by", "==", uid)), s => {
+    myAsks = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.at || 0) - (b.at || 0));
+    drawAsk();
+  }, () => { asksOk = false; drawAsk(); });
+
+  const askt = document.getElementById("askt"), asksend = document.getElementById("asksend");
+  let cooling = false;
+  function askMsg(t){
+    const m = document.getElementById("askmsg");
+    m.textContent = t;
+    setTimeout(() => { if (m.textContent === t) m.textContent = ""; }, 4000);
+  }
+  asksend.onclick = async () => {
+    const text = askt.value.trim();
+    if (!text || cooling) return;
+    if (text.length > MAX_ASK) return askMsg(`Keep it under ${MAX_ASK} characters.`);
+    asksend.disabled = true;
+    try {
+      await setDoc(askRef(room, newAid()), { text, by: uid, at: Date.now() });
+      askt.value = "";
+      askMsg("Sent.");
+      // A short pause between questions keeps one phone from flooding the list.
+      cooling = true;
+      setTimeout(() => { cooling = false; asksend.disabled = false; }, 8000);
+    } catch {
+      asksend.disabled = false;
+      askMsg("Didn't send. Your instructor may have just stopped taking questions.");
+    }
+  };
+  window.__withdraw = id => deleteDoc(askRef(room, id)).catch(() => {});
+
+  // The form is built once and only shown or hidden, so a half-typed question
+  // survives everything else on the page changing.
+  function drawAsk(){
+    if (!roomData) return;
+    const on = !!roomData.qa && asksOk;
+    document.getElementById("askform").hidden = !on;
+    document.getElementById("askzone").hidden = !on && !myAsks.length;
+    const s = JSON.stringify(myAsks.map(a => [a.id, a.text, a.status || ""]));
+    if (s === askSig) return;
+    askSig = s;
+    document.getElementById("mine").innerHTML = myAsks.length ? `
+      <div class="mine">
+        <label>Your questions</label>
+        ${myAsks.map(a => `
+        <div class="ask ${a.status === "answered" ? "done" : ""}">
+          <span class="body">
+            <span class="t">${esc(a.text)}</span>
+            <span class="m">${a.status === "answered" ? "Answered" : "Sent " + clock(a.at)}</span>
+          </span>
+          ${a.status === "answered" ? "" : `<span class="acts"><button class="small ghost" onclick="__withdraw('${a.id}')">Remove</button></span>`}
+        </div>`).join("")}
+      </div>` : "";
+  }
 
   // Re-render only when something this student can SEE changes — otherwise
   // the page would rebuild on every incoming vote and swallow a tap.
   let sig = null;
   function draw(){
     if (!roomData) return;
-    const open = !!roomData.open;
-    const next = !boundQ || !qdata
+    const ids = showIds();
+    const open = !!roomData.open, reveal = !!roomData.reveal;
+    const loaded = ids.every(id => id in qdata && (open ? id in mine : !reveal || id in votes));
+    if (!loaded) return;            // keep the current screen until the first snapshots land
+    const qs = ids.map(id => qdata[id] && { id, ...qdata[id] }).filter(Boolean);
+    const title = roomData.title || "";
+    const next = !qs.length
       ? JSON.stringify(["wait"])
-      : open ? JSON.stringify(["open", boundQ, qdata.question, qdata.options, mine])
-             : JSON.stringify(["closed", boundQ, qdata.question, qdata.options, tally(qdata, votes).counts]);
+      : open ? JSON.stringify(["open", title, failed, qs.map(q => [q.id, q.question, q.options, mine[q.id] ?? null])])
+             : JSON.stringify(["closed", title, reveal, qs.map(q => [q.id, q.question, q.options, q.earlier || null, reveal ? tally(q, votes[q.id] || []).counts : null])]);
     if (next === sig) return;
     sig = next;
 
-    if (!boundQ || !qdata) {
+    if (!qs.length) {
       el.innerHTML = `<div class="status wait">Waiting for the next question — keep this page open.</div>`;
       return;
     }
+    const head = title ? `<div class="stitle">${esc(title)}</div>` : "";
     if (!open) {
-      const { counts, total } = tally(qdata, votes);
-      el.innerHTML = total
-        ? `<div class="status">Voting is closed — here are the results.</div>${resultsHTML(qdata, counts, total)}`
-        : `<div class="status wait">Voting is closed right now — keep this page open.</div>
-           <div class="qtext">${esc(qdata.question || "")}</div>`;
+      const tallies = qs.map(q => tally(q, votes[q.id] || []));
+      el.innerHTML = reveal && tallies.some(t => t.total)
+        ? `<div class="status">Voting is closed — here are the results.</div>${slideResultsHTML(title, qs, tallies, false)}`
+        : `<div class="status wait">Voting is closed. Results will be shared later — keep this page open.</div>
+           ${head}${qs.map(q => `<div class="qtext">${esc(q.question || "")}</div>`).join("")}`;
       return;
     }
-    el.innerHTML = `
-      ${mine === null
-        ? `<div class="status">Pick one answer.</div>`
-        : `<div class="status ok">Answer recorded — tap another option to change it.</div>`}
-      <div class="qtext">${esc(qdata.question || "Question")}</div>
-      ${(qdata.options || []).map((o, i) => `
-        <button class="choice" aria-pressed="${mine === i}" onclick="__vote(${i})">
-          <span class="tag" style="background:${BARS[i % BARS.length]}">${LETTERS[i]}</span>
-          <span>${esc(o)}</span>
-        </button>`).join("")}`;
+    const many = qs.length > 1;
+    const done = qs.filter(q => mine[q.id] != null).length;
+    const status = failed
+      ? `<div class="status">That answer didn't go through — voting may have just closed.</div>`
+      : done === 0 ? `<div class="status">${many ? `${qs.length} questions — pick one answer for each.` : "Pick one answer."}</div>`
+      : done < qs.length ? `<div class="status">${done} of ${qs.length} answered — scroll for the rest.</div>`
+      : `<div class="status ok">${many ? "All answers recorded — tap another option to change any of them."
+                                       : "Answer recorded — tap another option to change it."}</div>`;
+    el.innerHTML = status + head + qs.map((q, k) => `
+      <div class="sq">
+        ${many ? `<div class="qnum">Question ${k + 1} of ${qs.length}${mine[q.id] != null ? " · answered" : ""}</div>` : ""}
+        <div class="qtext">${esc(q.question || "Question")}</div>
+        ${(q.options || []).map((o, i) => `
+          <button class="choice" aria-pressed="${mine[q.id] === i}" onclick="__vote('${q.id}', ${i})">
+            <span class="tag" style="background:${BARS[i % BARS.length]}">${LETTERS[i]}</span>
+            <span>${esc(o)}</span>
+          </button>`).join("")}
+      </div>`).join("");
   }
 }
 
