@@ -345,7 +345,7 @@ const sRef     = (r, s)     => doc(db, "polls", r, "slides", s);
 const asksRef  = r          => collection(db, "polls", r, "asks");
 const askRef   = (r, a)     => doc(db, "polls", r, "asks", a);
 const MAX_ASK  = 500;       // characters; keep in step with firestore.rules
-const PASSES   = 3;         // times a student question crosses the ticker before it drops off
+const PASSES   = 5;         // times a student question crosses the ticker before it drops off
 const MAX_PER_SLIDE = 12;   // keep in step with firestore.rules
 
 function newCode(){

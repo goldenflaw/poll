@@ -180,7 +180,9 @@ and the student's phone shows it as answered. In present mode, a small
 Clicking it takes you back to the console.
 
 Open questions stream right to left along the bottom of the Present view,
-like a news ticker (**Stop scrolling on screen** turns that off). New ones join at the end, and
+like a news ticker (**Stop scrolling on screen** turns that off). Each one
+crosses five times and then drops off the ticker; it stays in the panel, where
+**Scroll again** sends it round once more. New ones join at the end, and
 marking one answered or deleting it takes it off at once. Since questions are
 anonymous, keep an eye on the panel while it's on.
 
