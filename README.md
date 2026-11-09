@@ -144,11 +144,19 @@ Q: A question on its own
 # Revisit: has anything changed?
 Q: Every mutation in a Mendelian disease gene causes the disease.
                                      ← no options: brings back the earlier question
+D: What does the omnigenic model imply about…   ← a discussion prompt
+- disease prediction and polygenic scores?       ← its sub-questions
+- treatment and drug design?
 // notes like an answer key are ignored
 ```
 
 The box checks as you type and names any line it can't read. Keep decks
 with answer keys out of this repository, since the site is public.
+
+A **discussion prompt** (`D:`) is a step in the lecture like a question: the
+prompt and its sub-questions appear large on the projector and on every phone
+("Talk it over with the people around you"), with no voting. <kbd>→</kbd> moves
+on to the next step and phones go back to polling.
 
 ### Slides: several questions at once
 

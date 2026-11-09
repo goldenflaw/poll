@@ -159,6 +159,13 @@ window.FIREBASE_CONFIG = {
   .mine{margin-top:14px}
   #qabadge{display:none;position:fixed;bottom:56px;right:14px;z-index:9;font-size:.85rem}
 
+  /* discussion steps */
+  .disc-q{margin-bottom:18px}
+  ul.disc{margin:0;padding-left:1.3em;display:grid;gap:12px;font-size:1.15rem;max-width:70ch}
+  ul.disc li::marker{color:var(--accent)}
+  body.present .disc-q{font-size:3rem;margin-bottom:34px;max-width:28ch}
+  body.present ul.disc{font-size:1.9rem;gap:22px}
+
   /* activity: height polygenic score */
   .prs-how{max-width:60ch;color:var(--ink);margin:0 0 18px}
   .prs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 28px}
@@ -489,7 +496,7 @@ function slideResultsHTML(title, qs, tallies, hidden){
 const sameText = (a, b) => a.trim().toLowerCase().replace(/\s+/g, " ") === b.trim().toLowerCase().replace(/\s+/g, " ");
 function parseDeck(text, existing){
   const items = [], errors = [], fresh = [];
-  let slide = null, q = null;
+  let slide = null, q = null, disc = null;
   const short = t => t.length > 50 ? t.slice(0, 48) + "…" : t;
   function finishQ(){
     if (!q) return;
@@ -512,6 +519,14 @@ function parseDeck(text, existing){
     const line = raw.trim(), n = i + 1;
     if (!line || line.startsWith("//")) return;
     let m;
+    if ((m = line.match(/^D\s*[:.)]\s*(.+)$/i))) {
+      finishQ(); finishSlide();
+      disc = { kind: "d", title: m[1].trim().slice(0, 299), points: [], line: n };
+      items.push(disc);
+      return;
+    }
+    if (disc && /^[-*•]\s*/.test(line)) { disc.points.push(line.replace(/^[-*•]\s*/, "").slice(0, 300)); return; }
+    disc = null;
     if (line.startsWith("#")) {
       finishQ(); finishSlide();
       slide = { kind: "s", title: line.replace(/^#+\s*/, "").slice(0, 299), qs: [], line: n };
@@ -527,13 +542,13 @@ function parseDeck(text, existing){
       if (q) q.options.push(m[1].trim());
       else errors.push(`Line ${n}: an option with no question above it.`);
     } else {
-      errors.push(`Line ${n}: start questions with “Q:”, options with “-” and slides with “#”.`);
+      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, options with “-” and slides with “#”.`);
     }
   });
   finishQ(); finishSlide();
   const newCount = fresh.filter(x => !x.reuse).length;
   return { items, errors, newCount, slideCount: items.filter(x => x.kind === "s").length,
-           revisits: fresh.length - newCount };
+           revisits: fresh.length - newCount, discussions: items.filter(x => x.kind === "d").length };
 }
 
 /* ---------- activity: height polygenic score ---------- */
@@ -733,6 +748,12 @@ function plotPaint(root, m, geom, r2){
     : `A score that explains ${Math.round(r2 * 100)}% of the variation: predictions move toward the truth, but most stay well off it.`;
   root.querySelectorAll(".plot-presets [data-r2]").forEach(b => b.classList.toggle("on",
     b.dataset.r2 === "real" ? r2 === null : r2 !== null && Math.abs(+b.dataset.r2 - r2) < 0.005));
+}
+
+function discussHTML(title, points){
+  return `<div class="stitle">Discuss</div>
+    <div class="qtext disc-q">${esc(title || "")}</div>
+    ${(points || []).length ? `<ul class="disc">${points.map(pt => `<li>${esc(pt)}</li>`).join("")}</ul>` : ""}`;
 }
 
 function prsScreenHTML(list){
@@ -1135,7 +1156,8 @@ async function teacher(room){
       box.innerHTML = empty ? "" : parsed.errors.length
         ? `<div class="warn" style="margin:0">${parsed.errors.slice(0, 8).map(esc).join("<br>")}${parsed.errors.length > 8 ? "<br>…" : ""}</div>`
         : `Ready: ${parsed.newCount} new question${parsed.newCount === 1 ? "" : "s"}, ${parsed.slideCount} slide${parsed.slideCount === 1 ? "" : "s"}` +
-          (parsed.revisits ? `, ${parsed.revisits} brought back for a revisit.` : ".");
+          (parsed.revisits ? `, ${parsed.revisits} brought back for a revisit` : "") +
+          (parsed.discussions ? `, ${parsed.discussions} discussion prompt${parsed.discussions === 1 ? "" : "s"}.` : ".");
     };
     document.getElementById("cancel").onclick = () => closeEditor();
     btn.onclick = async () => {
@@ -1164,6 +1186,10 @@ async function teacher(room){
     };
     for (const it of parsed.items) {
       if (it.kind === "q") { addQ(it.q, true); continue; }
+      if (it.kind === "d") {
+        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title, qids: [], order: order++, step: "discuss", points: it.points }]);
+        continue;
+      }
       it.qs.forEach(q => addQ(q, false));
       writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title, qids: it.qs.map(idFor), order: order++ }]);
     }
@@ -1193,7 +1219,13 @@ async function teacher(room){
   }
   async function showItem(id){
     if (plotOn) document.getElementById("prsplot").click();
-    const step = stepOf(items().find(x => x.id === id));
+    const stepIt = items().find(x => x.id === id), step = stepOf(stepIt);
+    if (step === "discuss") {
+      // The prompt and its sub-questions go on the room so phones can show them too.
+      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || "", points: stepIt.s.points || [],
+                                       open: false, reveal: false, activity: "discuss" });
+      return;
+    }
     if (step) {
       // Phones show each student's celebrity for both steps; the plot itself is only on screen.
       await updateDoc(roomRef(room), { current: id, show: [], title: STEP_NAME[step], open: false, reveal: false, activity: "prs" });
@@ -1657,6 +1689,20 @@ async function teacher(room){
           ${moves}
         </span>
       </div>`;
+      if (stepOf(it) === "discuss") return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <div class="body">
+          <span class="t">${esc(it.s.title)}</span>
+          <span class="m">Discussion${live ? " · showing now" : ""}</span>
+          <ul class="sub">${(it.s.points || []).map(pt => `<li><span>&bull;</span><span>${esc(pt)}</span></li>`).join("")}</ul>
+        </div>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
+          ${moves}
+        </span>
+      </div>`;
       if (stepOf(it)) return `
       <div class="qitem slide ${live ? "live" : ""}">
         <span class="n">${i + 1}</span>
@@ -1737,7 +1783,7 @@ async function teacher(room){
         Hit <b>Show</b> on a question or slide to push it to their phones.</p>`;
       return;
     }
-    const what = stepOf(it) ? `Step ${i + 1} of ${list.length} · ${STEP_NAME[stepOf(it)]}`
+    const what = stepOf(it) ? `Step ${i + 1} of ${list.length} · ${STEP_NAME[stepOf(it)] || "Discussion"}`
       : it && it.kind === "s"
       ? `Slide ${i + 1} of ${list.length} · ${ids.length} question${ids.length === 1 ? "" : "s"}`
       : i >= 0 ? `Question ${i + 1} of ${list.length}` : "Showing";
@@ -1849,6 +1895,11 @@ async function teacher(room){
     const box = document.getElementById("results");
     const cur = items().find(x => x.id === roomData.current);
     if ((plotOn || stepOf(cur) === "plot") && PRS) return drawPlot(box);
+    if (stepOf(cur) === "discuss") {
+      const sig = JSON.stringify(["discuss", cur.id, cur.s.title, cur.s.points]);
+      if (sig !== shape) { shape = sig; app.classList.add("wide"); box.innerHTML = discussHTML(cur.s.title, cur.s.points); fitPresent(); }
+      return;
+    }
     if (roomData.activity === "prs" && PRS) {
       const s = JSON.stringify(["prs", roster()]);
       if (s !== shape) { shape = s; app.classList.add("wide"); box.innerHTML = prsScreenHTML(roster()); fitPresent(); }
@@ -2060,6 +2111,13 @@ async function student(room){
   let sig = null;
   function draw(){
     if (!roomData) return;
+    if (roomData.activity === "discuss") {
+      const next = JSON.stringify(["discuss", roomData.title || "", roomData.points || []]);
+      if (next === sig) return;
+      sig = next;
+      el.innerHTML = `<div class="status wait">Talk it over with the people around you.</div>` + discussHTML(roomData.title, roomData.points);
+      return;
+    }
     if (roomData.activity === "prs") {
       const next = JSON.stringify(["prs", roomData.roster || [], prsMe()]);
       if (next === sig) return;
