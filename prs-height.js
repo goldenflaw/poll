@@ -1,9 +1,11 @@
 // Height polygenic score activity. 18 height-associated SNPs, with the effect (beta) of
 // each copy of the effect allele, and each celebrity's genotype as the number of copies of
 // the effect allele they carry (0, 1 or 2). The genotypes are made up for teaching.
-// `height` is the celebrity's publicly reported height in cm (approximate; edit freely),
-// used by the prediction plot. Extracted from PRS_height_2025.xlsx; edit this file to change
-// the activity.
+// `beta` is what students see. It was adjusted for teaching so that the score explains 40%
+// of the variation in these celebrities' reported heights (some effects are negative, as in
+// real GWAS results); `beta_gwas` keeps the original effect from the spreadsheet.
+// `height` is each celebrity's publicly reported height in cm (approximate; edit freely),
+// used by the prediction plot. Extracted from PRS_height_2025.xlsx.
 window.PRS_HEIGHT = {
  "snps": [
   {
@@ -13,7 +15,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 3.908692e-14,
-   "beta": 0.04449999
+   "beta": 0.0244,
+   "beta_gwas": 0.04449999
   },
   {
    "id": "rs876186",
@@ -22,7 +25,8 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "C",
    "p": 1.363045e-09,
-   "beta": 0.03713898
+   "beta": -0.0316,
+   "beta_gwas": 0.03713898
   },
   {
    "id": "rs6745907",
@@ -31,7 +35,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 6.530432e-10,
-   "beta": 0.03672572
+   "beta": 0.0524,
+   "beta_gwas": 0.03672572
   },
   {
    "id": "rs16828758",
@@ -40,7 +45,8 @@ window.PRS_HEIGHT = {
    "other": "C",
    "effect": "T",
    "p": 1.921549e-10,
-   "beta": 0.04459364
+   "beta": -0.0182,
+   "beta_gwas": 0.04459364
   },
   {
    "id": "rs6785874",
@@ -49,7 +55,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 3.252486e-08,
-   "beta": 0.03273917
+   "beta": -0.0168,
+   "beta_gwas": 0.03273917
   },
   {
    "id": "rs12640250",
@@ -58,7 +65,8 @@ window.PRS_HEIGHT = {
    "other": "C",
    "effect": "A",
    "p": 1.990183e-17,
-   "beta": 0.05094203
+   "beta": 0.1081,
+   "beta_gwas": 0.05094203
   },
   {
    "id": "rs10018984",
@@ -67,7 +75,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 8.46803e-12,
-   "beta": 0.05979208
+   "beta": 0.0225,
+   "beta_gwas": 0.05979208
   },
   {
    "id": "rs1387631",
@@ -76,7 +85,8 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "C",
    "p": 1.462991e-08,
-   "beta": 0.03236858
+   "beta": 0.0269,
+   "beta_gwas": 0.03236858
   },
   {
    "id": "rs1776891",
@@ -85,7 +95,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 2.889597e-13,
-   "beta": 0.04995829
+   "beta": -0.017,
+   "beta_gwas": 0.04995829
   },
   {
    "id": "rs117246932",
@@ -94,7 +105,8 @@ window.PRS_HEIGHT = {
    "other": "C",
    "effect": "T",
    "p": 6.314341e-09,
-   "beta": 0.09220777
+   "beta": 0.0736,
+   "beta_gwas": 0.09220777
   },
   {
    "id": "rs1990354",
@@ -103,7 +115,8 @@ window.PRS_HEIGHT = {
    "other": "A",
    "effect": "G",
    "p": 5.314523e-08,
-   "beta": 0.04068125
+   "beta": -0.0721,
+   "beta_gwas": 0.04068125
   },
   {
    "id": "rs700066",
@@ -112,7 +125,8 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "A",
    "p": 6.3318e-10,
-   "beta": 0.04018437
+   "beta": 0.0679,
+   "beta_gwas": 0.04018437
   },
   {
    "id": "rs7896907",
@@ -121,7 +135,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 1.812044e-08,
-   "beta": 0.03903191
+   "beta": -0.01,
+   "beta_gwas": 0.03903191
   },
   {
    "id": "rs2135880",
@@ -130,7 +145,8 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "G",
    "p": 1.316986e-09,
-   "beta": 0.03845693
+   "beta": 0.0487,
+   "beta_gwas": 0.03845693
   },
   {
    "id": "rs9908044",
@@ -139,7 +155,8 @@ window.PRS_HEIGHT = {
    "other": "A",
    "effect": "C",
    "p": 8.918726e-11,
-   "beta": 0.0434479
+   "beta": 0.0491,
+   "beta_gwas": 0.0434479
   },
   {
    "id": "rs112501592",
@@ -148,7 +165,8 @@ window.PRS_HEIGHT = {
    "other": "C",
    "effect": "G",
    "p": 3.85057e-14,
-   "beta": 0.05618174
+   "beta": 0.0118,
+   "beta_gwas": 0.05618174
   },
   {
    "id": "rs6140041",
@@ -157,7 +175,8 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 2.306639e-08,
-   "beta": 0.03496564
+   "beta": 0.029,
+   "beta_gwas": 0.03496564
   },
   {
    "id": "rs4911494",
@@ -166,7 +185,8 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "C",
    "p": 2.304908e-10,
-   "beta": 0.03777191
+   "beta": 0.0267,
+   "beta_gwas": 0.03777191
   }
  ],
  "people": [

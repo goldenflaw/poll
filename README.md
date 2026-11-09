@@ -208,7 +208,11 @@ genotypes at 18 height-associated SNPs, to compute a polygenic score by hand
 
 *Who has which celebrity, and the answers* (collapsed, console only) lists
 each student's correct score. **Deal again** reshuffles. The SNPs and
-genotypes live in `prs-height.js`; the genotypes are made up for teaching.
+genotypes live in `prs-height.js`. The genotypes are made up for teaching, and
+the effects are adjusted so the score explains 40% of the variation in the
+celebrities' reported heights; some are negative, as in real GWAS results, and
+the spreadsheet's originals are kept as `beta_gwas`. With fewer students than
+celebrities, dealing leaves out the ones that keep the class's R² at 0.40.
 
 **Show prediction plot** puts the class's celebrities on the screen: each
 one's reported height up the side (the `height` values in `prs-height.js`,

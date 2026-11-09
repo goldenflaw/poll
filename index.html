@@ -727,7 +727,7 @@ function plotPaint(root, m, geom, r2){
   const shown = r2 === null ? m.r * m.r : r2;
   root.querySelector("#r2read").textContent = shown.toFixed(2);
   root.querySelector("#plotnote").textContent = r2 === null
-    ? `Predicted from the scores you computed (made-up genotypes): they explain ${Math.round(m.r * m.r * 100)}% of the variation in these celebrities' heights.`
+    ? `Predicted from the scores you computed (teaching data): they explain ${Math.round(m.r * m.r * 100)}% of the variation in these celebrities' heights.`
     : r2 >= 0.995 ? "Every prediction exactly right: all the dots on the diagonal."
     : r2 <= 0.005 ? "The score tells us nothing, so the best guess for everyone is the class average."
     : `A score that explains ${Math.round(r2 * 100)}% of the variation: predictions move toward the truth, but most stay well off it.`;
@@ -1383,8 +1383,26 @@ async function teacher(room){
   const roster = () => Array.isArray(roomData.roster) ? roomData.roster : [];
   let prsEditing = false, prsSig = null;
   function dealCelebs(names){
-    // A fresh random order each time; with more students than celebrities it starts over.
-    const order = PRS.people.map((_, i) => i);
+    // With fewer students than celebrities, leave out the ones whose absence keeps the
+    // score's R² for height closest to the full set's, so the prediction plot tells the same
+    // story for any class size. Then a fresh random order; past the last one it starts over.
+    let order = PRS.people.map((_, i) => i);
+    const heights = order.every(c => Number.isFinite(PRS.people[c].height));
+    const r2 = ids => {
+      const x = ids.map(prsScore), y = ids.map(c => PRS.people[c].height), n = ids.length;
+      const mx = x.reduce((s, v) => s + v, 0) / n, my = y.reduce((s, v) => s + v, 0) / n;
+      let sxy = 0, sxx = 0, syy = 0;
+      for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; syy += (y[i] - my) ** 2; }
+      return sxx && syy ? sxy * sxy / (sxx * syy) : 0;
+    };
+    if (heights && names.length >= 3 && names.length < order.length) {
+      const target = r2(order);
+      while (order.length > names.length) {
+        let drop = 0, gap = Infinity;
+        order.forEach((_, k) => { const g = Math.abs(r2(order.filter((_, j) => j !== k)) - target); if (g < gap) { gap = g; drop = k; } });
+        order.splice(drop, 1);
+      }
+    }
     for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
     return names.map((n, i) => ({ n, c: order[i % order.length] }));
   }
