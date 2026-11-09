@@ -184,22 +184,24 @@ window.FIREBASE_CONFIG = {
   /* prediction plot: score vs height, with an R² knob */
   .plot{display:grid;gap:12px}
   .plot svg{width:100%;height:auto;max-height:66vh;display:block;overflow:visible}
-  .plot .dot{transition:transform .7s cubic-bezier(.2,.7,.3,1)}
-  .plot .dot circle{fill:var(--accent);fill-opacity:.85;stroke:#fff;stroke-width:1.5}
-  .plot .dot text{font-size:12px;fill:var(--ink)}
-  .plot.nonames .dot text{display:none}
-  .plot .ax text{font-size:13px;fill:var(--muted)}
+  .plot .dot{fill:var(--accent);fill-opacity:.85;stroke:#fff;stroke-width:1.5}
+  .plot .name{font-size:14px;fill:var(--ink);dominant-baseline:middle}
+  .plot .lead{stroke:var(--muted);stroke-width:1;opacity:.75}
+  .plot.nonames .name,.plot.nonames .lead{display:none}
+  .plot .ax text{font-size:16px;fill:var(--muted)}
   .plot .ax line{stroke:var(--line)}
-  .plot .ax .lbl{font-size:14px;fill:var(--ink);font-weight:600}
-  .plot .fit{stroke:var(--steel);stroke-width:2.5;stroke-dasharray:7 6;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
-  .plot-ctl{display:flex;gap:10px 20px;align-items:center;flex-wrap:wrap}
-  .plot-ctl label{margin:0;flex:0 0 auto}
-  .plot-ctl input[type=range]{flex:1 1 300px;accent-color:var(--accent);height:30px;margin:0}
-  .plot-read{font-size:1.35rem;font-weight:700;min-width:7ch;font-variant-numeric:tabular-nums;color:var(--accent)}
-  .plot-note{font-size:.9rem;color:var(--muted);margin:0}
+  .plot .ax .lbl{font-size:18px;fill:var(--ink);font-weight:600}
+  .plot .fit{stroke:var(--steel);stroke-width:2.5;stroke-dasharray:7 6}
+  .plot .avg{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:2 5}
+  .plot .fitlbl{font-size:15px;fill:var(--steel)}
+  .plot-ctl{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap}
+  .plot-ctl label{margin:0;flex:0 0 auto;font-size:1.6rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
+  .plot-ctl input[type=range]{flex:0 1 380px;min-width:0;accent-color:var(--accent);height:34px;margin:0}
+  .plot-read{font-size:1.9rem;font-weight:700;min-width:4ch;font-variant-numeric:tabular-nums;color:var(--accent)}
+  .plot-note{font-size:1.1rem;color:var(--muted);margin:0}
   .plot-presets{display:flex;gap:8px;flex-wrap:wrap}
+  .plot-presets button{font-size:1rem;padding:8px 13px}
   .plot-presets button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-  @media (prefers-reduced-motion:reduce){.plot .dot,.plot .fit{transition:none}}
 
   /* join / QR */
   .join{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
@@ -541,59 +543,68 @@ function parseDeck(text, existing){
 const PRS = window.PRS_HEIGHT || null;
 const prsBeta  = k => Math.round(PRS.snps[k].beta * 1e4) / 1e4;
 const prsScore = c => PRS.snps.reduce((sum, _, k) => sum + prsBeta(k) * PRS.people[c].dosage[k], 0);
-// Prediction plot. Each dot is one celebrity: x is their polygenic score, y their height.
-// The R² knob decides how much of the variation in height the score explains:
-//   height = mean + sd × ( √R² · z(score) + √(1 − R²) · e )
-// where e is each celebrity's own leftover, taken from their reported height with the part
-// the score explains removed (rescaled, uncorrelated with the score). Every dot keeps its
-// leftover as the knob turns, so dots slide rather than jump, and at the R² the reported
-// heights actually show, the dots sit exactly where the class drew them.
+// Prediction plot. Each dot is one celebrity: up is their reported height, which never
+// moves; across is their height as predicted from a polygenic score. The R² knob sets how
+// good that score is. In standard units, a score that correlates r = √R² with height is
+//   g = r · height + √(1 − r²) · u,      and the best prediction from it is  r · g
+// so at R² = 1 every prediction is exactly right (the diagonal) and at R² = 0 everyone is
+// predicted the average (a vertical line at the mean). u is each celebrity's own share of
+// the score that has nothing to do with their height, taken from the score the class
+// computed (rescaled, uncorrelated with height); it stays fixed as the knob turns, so dots
+// slide rather than jump, and at the class's own R² the predictions are exactly those from
+// the scores they worked out.
 function plotModel(ids){
-  const x = ids.map(prsScore), h = ids.map(c => PRS.people[c].height);
-  const n = ids.length, mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  const x = ids.map(prsScore), n = ids.length;
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
   const sd = a => { const m = mean(a); return Math.sqrt(mean(a.map(v => (v - m) ** 2))) || 1; };
-  const mx = mean(x), sx = sd(x), zx = x.map(v => (v - mx) / sx);
-  const real = h.every(Number.isFinite);
-  let mh = 170, sh = 9, r = 0, e;
-  if (real) {
-    mh = mean(h); sh = sd(h);
-    const zy = h.map(v => (v - mh) / sh);
-    r = mean(zx.map((v, i) => v * zy[i]));
-    e = zy.map((v, i) => v - r * zx[i]);
-  } else {
-    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    e = zx.map(() => Math.sqrt(-2 * Math.log(rnd())) * Math.cos(2 * Math.PI * rnd()));
-    const k = mean(e.map((v, i) => v * zx[i])); e = e.map((v, i) => v - k * zx[i]);
-  }
-  const se = sd(e), me = mean(e); e = e.map(v => (v - me) / se);
-  return { ids, x, h, zx, e, mx, sx, mh, sh, r, real, n };
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd())) * Math.cos(2 * Math.PI * rnd());
+  const real = ids.every(c => Number.isFinite(PRS.people[c].height));
+  const h = real ? ids.map(c => PRS.people[c].height) : ids.map(() => 170 + 9 * gauss());
+  const mh = mean(h), sh = sd(h), zy = h.map(v => (v - mh) / sh);
+  const mx = mean(x), zx = x.map(v => (v - mx) / sd(x));
+  const r = mean(zx.map((v, i) => v * zy[i]));
+  let u = zx.map((v, i) => v - r * zy[i]);
+  if (sd(u) < 1e-9) u = zy.map(() => gauss());
+  const mu = mean(u), su = sd(u); u = u.map(v => (v - mu) / su);
+  return { ids, x, h, zx, zy, u, mh, sh, r, real, n };
 }
-const plotY = (m, i, r2) => r2 === null ? m.h[i] : m.mh + m.sh * (Math.sqrt(r2) * m.zx[i] + Math.sqrt(1 - r2) * m.e[i]);
+// Predicted height for celebrity i; r2 === null means the prediction from the class's own scores.
+function plotPred(m, i, r2){
+  if (r2 === null) return m.mh + m.sh * m.r * m.zx[i];
+  const r = Math.sqrt(r2), g = r * m.zy[i] + Math.sqrt(1 - r2) * m.u[i];
+  return m.mh + m.sh * r * g;
+}
 
 function plotHTML(m){
-  const W = 1000, H = 540, L = 70, R = 24, T = 16, B = 58;
-  const xs = m.x, pad = (Math.max(...xs) - Math.min(...xs)) * 0.08 || 0.1;
-  const x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad;
-  const lo = Math.floor((Math.min(m.mh - 3 * m.sh, ...(m.real ? m.h : []))) / 10) * 10 - 5;
-  const hi = Math.ceil((Math.max(m.mh + 3 * m.sh, ...(m.real ? m.h : []))) / 10) * 10 + 5;
-  const px = v => L + (v - x0) / (x1 - x0) * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
-  const xt = []; for (let v = Math.ceil(x0 * 5) / 5; v <= x1 + 1e-9; v += 0.2) xt.push(+v.toFixed(1));
-  const yt = []; for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) yt.push(v);
-  return { geom: { px, py, cx: px(m.mx), cy: py(m.mh), slope1: (m.sh / m.sx) * ((H - T - B) / (hi - lo)) / ((W - L - R) / (x1 - x0)) },
+  const W = 1000, H = 540, L = 70, R = 24, T = 16, B = 62;
+  // Both axes are heights in cm on the same range, so the diagonal is "predicted = actual".
+  const lo = Math.floor(Math.min(...m.h, m.mh - 2.5 * m.sh) / 10) * 10 - 5;
+  const hi = Math.ceil(Math.max(...m.h, m.mh + 2.5 * m.sh) / 10) * 10 + 5;
+  const px = v => L + (v - lo) / (hi - lo) * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const ticks = []; for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) ticks.push(v);
+  return { geom: { px, py, box: { l: L, r: W - 4, t: T, b: H - B } },
     html: `
     <div class="stitle">Activity</div>
     <div class="qtext" style="margin-bottom:8px">How well does the score predict height?</div>
     <div class="plot" id="plot">
-      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Polygenic score against height for each celebrity">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Each celebrity's predicted height against their reported height">
         <defs><clipPath id="plotclip"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/></clipPath></defs>
         <g class="ax">
-          ${yt.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v)}" y2="${py(v)}"/><text x="${L - 10}" y="${py(v) + 4}" text-anchor="end">${v}</text>`).join("")}
-          ${xt.map(v => `<text x="${px(v)}" y="${H - B + 22}" text-anchor="middle">${v.toFixed(1)}</text>`).join("")}
-          <text class="lbl" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">Polygenic score (sum of β × copies)</text>
-          <text class="lbl" transform="translate(16 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Height (cm)</text>
+          ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v)}" y2="${py(v)}"/><text x="${L - 10}" y="${py(v) + 5}" text-anchor="end">${v}</text>`).join("")}
+          ${ticks.map(v => `<text x="${px(v)}" y="${H - B + 24}" text-anchor="middle">${v}</text>`).join("")}
+          <text class="lbl" x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">Height predicted from the polygenic score (cm)</text>
+          <text class="lbl" transform="translate(18 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Reported height (cm)</text>
         </g>
-        <g clip-path="url(#plotclip)"><line class="fit" id="fit" x1="-2000" x2="2000" y1="0" y2="0"/></g>
-        ${m.ids.map((c, i) => `<g class="dot" data-i="${i}"><circle r="8"/><text x="11" y="4">${esc(PRS.people[c].name)}</text></g>`).join("")}
+        <g clip-path="url(#plotclip)">
+          <line class="fit" x1="${px(lo)}" y1="${py(lo)}" x2="${px(hi)}" y2="${py(hi)}"/>
+          <line class="avg" x1="${px(m.mh)}" y1="${T}" x2="${px(m.mh)}" y2="${H - B}"/>
+        </g>
+        <text class="fitlbl" x="${px(hi) - 8}" y="${py(hi) + 20}" text-anchor="end">perfect prediction</text>
+        <text class="fitlbl" x="${px(m.mh) + 6}" y="${H - B - 8}">class average</text>
+        <g class="leads">${m.ids.map((c, i) => `<line class="lead" data-i="${i}"/>`).join("")}</g>
+        <g class="dots">${m.ids.map((c, i) => `<circle class="dot" data-i="${i}" r="${DOT_R}"/>`).join("")}</g>
+        <g class="names">${m.ids.map((c, i) => `<text class="name" data-i="${i}">${esc(PRS.people[c].name)}</text>`).join("")}</g>
       </svg>
       <div class="plot-ctl">
         <label for="r2">R²</label>
@@ -602,7 +613,7 @@ function plotHTML(m){
       </div>
       <div class="plot-ctl">
         <div class="plot-presets">
-          ${m.real ? `<button class="small ghost" data-r2="real">Reported heights</button>` : ""}
+          <button class="small ghost" data-r2="real">Our 18 SNPs</button>
           <button class="small ghost" data-r2="0">0</button>
           <button class="small ghost" data-r2="0.4">0.4 · best height scores today</button>
           <button class="small ghost" data-r2="0.8">0.8 · heritability of height</button>
@@ -614,22 +625,112 @@ function plotHTML(m){
     </div>` };
 }
 
-// Move every dot (and the fitted line) to where R² puts it; null means the reported heights.
-function plotPaint(root, m, geom, r2){
-  root.querySelectorAll(".dot").forEach(g => {
-    const i = +g.dataset.i;
-    g.style.transform = `translate(${geom.px(m.x[i]).toFixed(1)}px, ${geom.py(plotY(m, i, r2)).toFixed(1)}px)`;
+const DOT_R = 7;
+// Where everything goes for one setting of the knob. Dots that would overlap are nudged
+// apart, by at most about a dot's width, so none hides another. Each name then takes the
+// nearest free spot around its dot (right, left, the diagonals, above, below, then further
+// out), clear of the other names and dots; a name that had to move away gets a thin line
+// back to its dot.
+function plotLayout(root, pts, box, withNames){
+  const n = pts.length, d = pts.map(p => ({ x: p.x, y: p.y }));
+  const min = 2 * DOT_R + 1, cap = DOT_R * 1.3;
+  for (let it = 0; it < 60; it++) {
+    let moved = false;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      let dx = d[j].x - d[i].x, dy = d[j].y - d[i].y, dist = Math.hypot(dx, dy);
+      if (dist >= min) continue;
+      if (dist < 1e-6) { const a = ((i * 7 + j * 13) % 36) * Math.PI / 18; dx = Math.cos(a); dy = Math.sin(a); dist = 1; }
+      const push = (min - Math.min(dist, min)) / 2, ux = dx / Math.hypot(dx, dy), uy = dy / Math.hypot(dx, dy);
+      d[i].x -= ux * push; d[i].y -= uy * push; d[j].x += ux * push; d[j].y += uy * push; moved = true;
+    }
+    for (let i = 0; i < n; i++) {
+      const ox = d[i].x - pts[i].x, oy = d[i].y - pts[i].y, o = Math.hypot(ox, oy);
+      if (o > cap) { d[i].x = pts[i].x + ox / o * cap; d[i].y = pts[i].y + oy / o * cap; }
+    }
+    if (!moved) break;
+  }
+  if (!withNames) return { dots: d, names: null };
+
+  const texts = [...root.querySelectorAll(".name")];
+  const size = texts.map(t => { let w = 0; try { w = t.getComputedTextLength(); } catch {} return { w: (w || t.textContent.length * 7.4) + 4, h: 17 }; });
+  const over = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const dotBoxes = d.map(p => ({ x: p.x - DOT_R - 1, y: p.y - DOT_R - 1, w: 2 * DOT_R + 2, h: 2 * DOT_R + 2 }));
+  // Crowded dots pick first, so they get the spots nearest to them.
+  const crowd = d.map((p, i) => d.filter(q => Math.hypot(q.x - p.x, q.y - p.y) < 60).length);
+  const order = d.map((_, i) => i).sort((a, b) => crowd[b] - crowd[a] || d[a].x - d[b].x);
+  const placed = [], names = new Array(n);
+  for (const i of order) {
+    const { w, h } = size[i], p = d[i];
+    let pick = null;
+    for (const r of [10, 18, 30, 46, 66, 92, 125]) {
+      const k = r * 0.7, spots = [[r, -h / 2], [-r - w, -h / 2], [k, -k - h], [k, k], [-k - w, -k - h], [-k - w, k], [-w / 2, -r - h], [-w / 2, r]];
+      for (const [ox, oy] of spots) {
+        const b = { x: p.x + ox, y: p.y + oy, w, h };
+        if (b.x < box.l || b.x + b.w > box.r || b.y < box.t - 4 || b.y + b.h > box.b) continue;
+        if (placed.some(q => over(b, q)) || dotBoxes.some(q => over(b, q))) continue;
+        pick = { ...b, lead: !(r === 10 && ox === r) };
+        break;
+      }
+      if (pick) break;
+    }
+    if (!pick) pick = { x: p.x + 10, y: p.y - h / 2, w, h, lead: false };   // nowhere free: sit beside the dot
+    placed.push(pick);
+    names[i] = pick;
+  }
+  return { dots: d, names };
+}
+
+// Draw one frame: dots, names, and the lines from each moved name back to its dot.
+function plotDraw(root, st){
+  const circles = root.querySelectorAll(".dot"), texts = root.querySelectorAll(".name"), leads = root.querySelectorAll(".lead");
+  if (circles.length !== st.dots.length) return false;      // the plot was replaced mid-glide
+  st.dots.forEach((p, i) => { circles[i].setAttribute("cx", p.x.toFixed(1)); circles[i].setAttribute("cy", p.y.toFixed(1)); });
+  if (!st.names) return;
+  st.names.forEach((b, i) => {
+    texts[i].setAttribute("x", (b.x + 2).toFixed(1)); texts[i].setAttribute("y", (b.y + b.h / 2).toFixed(1));
+    const p = st.dots[i], line = leads[i];
+    const nx = Math.max(b.x, Math.min(p.x, b.x + b.w)), ny = Math.max(b.y, Math.min(p.y, b.y + b.h));
+    const len = Math.hypot(nx - p.x, ny - p.y);
+    if (!b.lead || len < DOT_R + 4) { line.setAttribute("visibility", "hidden"); return; }
+    line.setAttribute("visibility", "visible");
+    line.setAttribute("x1", (p.x + (nx - p.x) / len * DOT_R).toFixed(1)); line.setAttribute("y1", (p.y + (ny - p.y) / len * DOT_R).toFixed(1));
+    line.setAttribute("x2", nx.toFixed(1)); line.setAttribute("y2", ny.toFixed(1));
   });
-  const slope = r2 === null ? m.r : Math.sqrt(r2);                 // in standard units
-  const deg = Math.atan(slope * geom.slope1) * 180 / Math.PI;
-  const fit = root.querySelector("#fit");
-  fit.style.transform = `translate(${geom.cx.toFixed(1)}px, ${geom.cy.toFixed(1)}px) rotate(${(-deg).toFixed(2)}deg)`;
+}
+
+// Glide from what's on screen to the new layout, everything together.
+function plotGlide(root, to){
+  const from = root.__plotNow;
+  cancelAnimationFrame(root.__plotRaf || 0);
+  const still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!from || still || !from.names !== !to.names) { root.__plotNow = to; plotDraw(root, to); return; }
+  const mix = (a, b, t) => a + (b - a) * t, t0 = performance.now(), ms = 700;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / ms), t = 1 - Math.pow(1 - k, 3);
+    const st = {
+      dots: to.dots.map((p, i) => ({ x: mix(from.dots[i].x, p.x, t), y: mix(from.dots[i].y, p.y, t) })),
+      names: to.names && to.names.map((b, i) => ({ ...b, x: mix(from.names[i].x, b.x, t), y: mix(from.names[i].y, b.y, t),
+                                                   lead: t < 1 ? (b.lead || from.names[i].lead) : b.lead })),
+    };
+    root.__plotNow = st;
+    if (plotDraw(root, st) === false) { root.__plotNow = null; return; }
+    if (k < 1) root.__plotRaf = requestAnimationFrame(step);
+  };
+  root.__plotRaf = requestAnimationFrame(step);
+}
+
+// Move every prediction to where R² puts it (null: the class's own scores). Heights stay put.
+function plotPaint(root, m, geom, r2){
+  const pts = m.ids.map((_, i) => ({ x: geom.px(plotPred(m, i, r2)), y: geom.py(m.h[i]) }));
+  root.querySelectorAll(".dot").forEach((c, i) => { c.dataset.tx = pts[i].x.toFixed(2); c.dataset.ty = pts[i].y.toFixed(2); });
+  plotGlide(root, plotLayout(root, pts, geom.box, !root.querySelector("#plot").classList.contains("nonames")));
   const shown = r2 === null ? m.r * m.r : r2;
   root.querySelector("#r2read").textContent = shown.toFixed(2);
   root.querySelector("#plotnote").textContent = r2 === null
-    ? `Reported heights of these ${m.n} celebrities against their (made-up) scores: the score explains ${Math.round(m.r * m.r * 100)}% of the variation.`
-    : r2 >= 0.995 ? "Every dot on the line: the score would predict height exactly."
-    : `If the score explained ${Math.round(r2 * 100)}% of the variation in height. Dashed line: the best prediction from the score.`;
+    ? `Predicted from the scores you computed (made-up genotypes): they explain ${Math.round(m.r * m.r * 100)}% of the variation in these celebrities' heights.`
+    : r2 >= 0.995 ? "Every prediction exactly right: all the dots on the diagonal."
+    : r2 <= 0.005 ? "The score tells us nothing, so the best guess for everyone is the class average."
+    : `A score that explains ${Math.round(r2 * 100)}% of the variation: predictions move toward the truth, but most stay well off it.`;
   root.querySelectorAll(".plot-presets [data-r2]").forEach(b => b.classList.toggle("on",
     b.dataset.r2 === "real" ? r2 === null : r2 !== null && Math.abs(+b.dataset.r2 - r2) < 0.005));
 }
@@ -812,6 +913,7 @@ async function teacher(room){
         <div class="row spread" style="margin-bottom:12px">
           <h2 style="margin:0">Activity: height polygenic score</h2>
           <div class="row">
+            <button class="small ghost" id="prsadd" title="Adds the activity and the prediction plot as steps you reach with the arrow keys">Add to lecture</button>
             <button class="small ghost" id="prsplot">Show prediction plot</button>
             <button class="small primary" id="prsgo">Show on phones</button>
           </div>
@@ -875,6 +977,10 @@ async function teacher(room){
   }
   const showFor  = it => it.kind === "q" ? [it.id] : slideQids(it.s);
   const titleFor = it => it.kind === "s" ? (it.s.title || "") : null;
+  // Activity steps are slide docs with a `step` of "prs" (genotypes on phones) or
+  // "plot" (the prediction plot on screen), so arrow keys walk through them like polls.
+  const stepOf   = it => it && it.kind === "s" ? it.s.step || null : null;
+  const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot" };
   // Sessions saved before slides existed have `current` but no `show`.
   const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
                           : roomData.current ? [roomData.current] : []).filter(id => qById(id));
@@ -1087,6 +1193,12 @@ async function teacher(room){
   }
   async function showItem(id){
     if (plotOn) document.getElementById("prsplot").click();
+    const step = stepOf(items().find(x => x.id === id));
+    if (step) {
+      // Phones show each student's celebrity for both steps; the plot itself is only on screen.
+      await updateDoc(roomRef(room), { current: id, show: [], title: STEP_NAME[step], open: false, reveal: false, activity: "prs" });
+      return;
+    }
     const list = items(), i = list.findIndex(x => x.id === id), it = list[i];
     if (!it) return;
     const ids = showFor(it);
@@ -1279,6 +1391,16 @@ async function teacher(room){
   document.getElementById("prsgo").onclick = () =>
     updateDoc(roomRef(room), { activity: roomData.activity === "prs" ? null : "prs" });
 
+  // Two steps at the end of the lecture; move them where they belong with the arrows.
+  document.getElementById("prsadd").onclick = async () => {
+    const at = Math.max(Date.now(), ...questions.map(q => q.order || 0), ...slides.map(x => x.order || 0)) + 1;
+    const batch = writeBatch(db);
+    batch.set(sRef(room, newSid() + "a"), { title: STEP_NAME.prs, qids: [], order: at, step: "prs" });
+    batch.set(sRef(room, newSid() + "b"), { title: STEP_NAME.plot, qids: [], order: at + 1, step: "plot" });
+    await batch.commit();
+    document.getElementById("qlist").scrollIntoView && document.getElementById("qlist").scrollIntoView({ block: "end" });
+  };
+
   // The prediction plot is for the projector only, and the knob is yours: it isn't
   // stored or sent to phones.
   let plotOn = false;
@@ -1297,11 +1419,21 @@ async function teacher(room){
     shape = s;
     app.classList.add("wide");
     const m = plotModel(ids), { html, geom } = plotHTML(m);
+    cancelAnimationFrame(box.__plotRaf || 0);
+    box.__plotNow = null;                   // a fresh plot starts from its own first layout
     box.innerHTML = html;
-    let r2 = m.real ? null : 0.4;
+    let r2 = null;
     const paint = () => plotPaint(box, m, geom, r2);
     const slider = box.querySelector("#r2");
     slider.oninput = () => { r2 = +slider.value; paint(); };
+    // Let go of the slider once it's set, so ← → go back to stepping through the lecture;
+    // ↑ ↓ nudge the knob instead.
+    slider.onchange = () => slider.blur();
+    box.__nudge = step => {
+      r2 = Math.round(Math.min(1, Math.max(0, (r2 === null ? m.r * m.r : r2) + step)) * 100) / 100;
+      slider.value = r2.toFixed(2);
+      paint();
+    };
     box.querySelectorAll(".plot-presets [data-r2]").forEach(b => b.onclick = () => {
       r2 = b.dataset.r2 === "real" ? null : +b.dataset.r2;
       slider.value = (r2 === null ? m.r * m.r : r2).toFixed(2);
@@ -1311,6 +1443,7 @@ async function teacher(room){
       const plot = box.querySelector("#plot");
       plot.classList.toggle("nonames");
       e.target.textContent = plot.classList.contains("nonames") ? "Show names" : "Hide names";
+      paint();
     };
     paint();
     fitPresent();
@@ -1383,6 +1516,10 @@ async function teacher(room){
     else if (e.key === " ") { e.preventDefault(); toggleOpen(); }
     else if (e.key === "r" || e.key === "R") toggleReveal();
     else if (e.key === "p" || e.key === "P") repoll();
+    else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot")) {
+      e.preventDefault();
+      document.getElementById("results").__nudge(e.key === "ArrowUp" ? 0.05 : -0.05);
+    }
     else if (e.key === "Escape") setPresent(false);
   });
 
@@ -1493,6 +1630,19 @@ async function teacher(room){
           ${moves}
         </span>
       </div>`;
+      if (stepOf(it)) return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <span class="body">
+          <span class="t">${STEP_NAME[stepOf(it)]}</span>
+          <span class="m">${stepOf(it) === "prs" ? "Each phone shows its student's celebrity" : "Score against height, with the R² knob"}${live ? " · showing now" : ""}</span>
+        </span>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
+          ${moves}
+        </span>
+      </div>`;
       const ids = slideQids(it.s);
       return `
       <div class="qitem slide ${live ? "live" : ""}">
@@ -1560,7 +1710,8 @@ async function teacher(room){
         Hit <b>Show</b> on a question or slide to push it to their phones.</p>`;
       return;
     }
-    const what = it && it.kind === "s"
+    const what = stepOf(it) ? `Step ${i + 1} of ${list.length} · ${STEP_NAME[stepOf(it)]}`
+      : it && it.kind === "s"
       ? `Slide ${i + 1} of ${list.length} · ${ids.length} question${ids.length === 1 ? "" : "s"}`
       : i >= 0 ? `Question ${i + 1} of ${list.length}` : "Showing";
     el.innerHTML = `
@@ -1668,7 +1819,8 @@ async function teacher(room){
   let shape = null;
   function drawResults(){
     const box = document.getElementById("results");
-    if (plotOn && PRS) return drawPlot(box);
+    const cur = items().find(x => x.id === roomData.current);
+    if ((plotOn || stepOf(cur) === "plot") && PRS) return drawPlot(box);
     if (roomData.activity === "prs" && PRS) {
       const s = JSON.stringify(["prs", roster()]);
       if (s !== shape) { shape = s; app.classList.add("wide"); box.innerHTML = prsScreenHTML(roster()); fitPresent(); }

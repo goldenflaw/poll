@@ -210,16 +210,26 @@ genotypes at 18 height-associated SNPs, to compute a polygenic score by hand
 each student's correct score. **Deal again** reshuffles. The SNPs and
 genotypes live in `prs-height.js`; the genotypes are made up for teaching.
 
-**Show prediction plot** puts a scatter of the class's celebrities on the
-screen: polygenic score across, height up, the same plot students can draw on
-the board. It opens on their reported heights (the `height` values in
-`prs-height.js`, approximate). The **R²** slider then shows what the plot
-would look like if the score explained that share of the variation in height:
-at 1 every dot sits on the line, at 0 it's a cloud. Each celebrity keeps the
-same unexplained "leftover" as the knob turns, so dots slide rather than jump,
-and at the reported heights' own R² they land exactly where the real data
-are. Presets: 0.4 (about what the best height scores reach today) and 0.8
-(roughly the heritability of height). The knob is only on your screen.
+**Show prediction plot** puts the class's celebrities on the screen: each
+one's reported height up the side (the `height` values in `prs-height.js`,
+approximate), and their height as predicted from the polygenic score across.
+It opens on **Our 18 SNPs**, the prediction from the scores students computed,
+the same shape as score-against-height on the board. The **R²** knob changes
+how good the score is; people's heights never move, only the predictions:
+at 1 every prediction is exactly right (the dashed diagonal), at 0 the score
+says nothing and everyone is predicted the class average. Dots slide smoothly,
+and at the class's own R² they land exactly on the real predictions. Presets:
+0.4 (about what the best height scores reach today) and 0.8 (roughly the
+heritability of height). Names take free spots with a thin line back to their
+dot, and dots that would overlap are nudged apart slightly. The knob is only on
+your screen.
+
+**Present it straight through.** **Add to lecture** puts two steps in your
+question list, *Activity: your celebrity's genotypes* and *Prediction plot*;
+move them where they belong with ↑ ↓. In Present mode, <kbd>→</kbd> then walks
+from a poll to the activity (phones show each student's celebrity), to the
+plot, and on to the next poll. On the plot, drag the knob or press
+<kbd>↑</kbd> <kbd>↓</kbd> to change R² by 0.05.
 
 ### Re-poll: before and after
 
