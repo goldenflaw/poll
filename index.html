@@ -159,6 +159,16 @@ window.FIREBASE_CONFIG = {
   .mine{margin-top:14px}
   #qabadge{display:none;position:fixed;bottom:56px;right:14px;z-index:9;font-size:.85rem}
 
+  /* questions asked only once: go through them on the spot */
+  .once-tag,.back-tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    border-radius:99px;padding:1px 8px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+  .once-tag{color:var(--accent);background:var(--accent-soft)}
+  .back-tag{color:var(--muted);background:#efeff2}
+  .once-note{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:3px 12px;margin:0 0 14px}
+  body.present .once-note{font-size:.95rem}
+  .result.once .qtext{box-shadow:inset 4px 0 0 var(--accent);padding-left:12px}
+
   /* discussion steps */
   .disc-q{margin-bottom:18px}
   ul.disc{margin:0;padding-left:1.3em;display:grid;gap:12px;font-size:1.15rem;max-width:70ch}
@@ -1010,6 +1020,20 @@ async function teacher(room){
     items().forEach((it, i) => { if (it.kind === "q") m[it.id] = i + 1; });
     return m;
   }
+  // Steps (1-based) where each question shows up. A question that shows up once never
+  // comes back on a re-test, so it needs going through on the spot.
+  function appearances(){
+    const m = {};
+    items().forEach((it, i) => showFor(it).forEach(id => (m[id] = m[id] || []).push(i + 1)));
+    return m;
+  }
+  const askedOnce = (app, id) => (app[id] || []).length === 1;
+  function onceTag(app, id, step){
+    const at = app[id] || [];
+    if (at.length === 1) return `<span class="once-tag">asked once · go through it here</span>`;
+    const later = at.find(n => n > step);
+    return later ? `<span class="back-tag">back at step ${later}</span>` : "";
+  }
 
   /* ---- editors ---- */
   function openEditor(kind, id){
@@ -1669,6 +1693,7 @@ async function teacher(room){
       el.innerHTML = `<p class="muted" style="margin:0">No questions yet. Add them before class — you can prepare the whole lecture here.</p>`;
       return;
     }
+    const appear = appearances();
     el.innerHTML = list.map((it, i) => {
       const live = it.id === roomData.current;
       const show = `<button class="small ${live ? "ghost" : "primary"}"
@@ -1680,7 +1705,7 @@ async function teacher(room){
         <span class="n">${i + 1}</span>
         <span class="body">
           <span class="t">${esc(it.q.question)}</span>
-          <span class="m">${(it.q.options || []).length} options${live ? " · showing now" : ""}</span>
+          <span class="m">${(it.q.options || []).length} options${live ? " · showing now" : ""} ${onceTag(appear, it.id, i + 1)}</span>
         </span>
         <span class="acts">
           ${show}
@@ -1724,7 +1749,7 @@ async function teacher(room){
           <span class="t">${esc(it.s.title || "Untitled slide")}</span>
           <span class="m">Slide · ${ids.length} question${ids.length === 1 ? "" : "s"}${live ? " · showing now" : ""}</span>
           <ul class="sub">${ids.map(id => `
-            <li><span>${num[id] ? "#" + num[id] : "&bull;"}</span><span>${esc(qById(id).question)}</span>${
+            <li><span>${num[id] ? "#" + num[id] : "&bull;"}</span><span>${esc(qById(id).question)} ${onceTag(appear, id, i + 1)}</span>${
               standalone(qById(id)) ? "" : `<button class="ghost" onclick="__edit('${id}')">Edit</button>`}</li>`).join("")}
           </ul>
         </div>
@@ -1767,7 +1792,8 @@ async function teacher(room){
     // A slide that brings back questions asked earlier is the second time around:
     // nudge toward Re-poll until it's been pressed.
     const revisit = i >= 0 && isRevisit(list, i) && !ids.every(id => qById(id).earlier);
-    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, revisit, i, list.length, ids.length]);
+    const appear = appearances(), once = ids.filter(id => askedOnce(appear, id)).length;
+    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, revisit, i, list.length, ids.length, once]);
 
     // Only the response count moves as votes land — update it in place so
     // the controls underneath the instructor's cursor stay put.
@@ -1805,6 +1831,10 @@ async function teacher(room){
           <button class="small ghost" id="hide">Hide</button>
         </div>
       </div>
+      ${once ? `<p class="warn" style="margin:12px 0 0">${once === ids.length
+        ? (ids.length === 1 ? "This question doesn't come back later" : "None of these questions come back later")
+        : `${once} of these questions ${once === 1 ? "doesn't" : "don't"} come back later`}: go through ${once === 1 ? "it" : "them"} now
+        (<kbd>space</kbd> closes voting, <kbd>space</kbd> again reveals).</p>` : ""}
       ${revisit ? `<p class="warn" style="margin:12px 0 0">These questions were asked earlier. Press <b>Re-poll</b> (or <kbd>P</kbd>)
         to start the second round; closing voting afterwards shows before and after together.</p>` : ""}
       <p class="muted" style="margin:12px 0 0">
@@ -1914,10 +1944,14 @@ async function teacher(room){
     }
     const hidden = !roomData.reveal;
     const tallies = qs.map(q => tally(q, votes[q.id] || []));
-    const nextShape = JSON.stringify([roomData.title || "", hidden, qs.map(q => [q.id, q.question, q.options, q.earlier || null])]);
+    const appear = appearances(), once = qs.map(q => askedOnce(appear, q.id));
+    const nextShape = JSON.stringify([roomData.title || "", hidden, once, qs.map(q => [q.id, q.question, q.options, q.earlier || null])]);
     if (nextShape !== shape) {
       shape = nextShape;
-      box.innerHTML = slideResultsHTML(roomData.title, qs, tallies, hidden);
+      box.innerHTML = (once.some(Boolean) ? `<div class="once-note">${once.length > 1 && !once.every(Boolean)
+          ? "Marked questions aren't re-tested · go through them now" : "Not re-tested later · go through now"}</div>` : "")
+        + slideResultsHTML(roomData.title, qs, tallies, hidden);
+      if (qs.length > 1) box.querySelectorAll(".result[data-q]").forEach((r, k) => r.classList.toggle("once", once[k]));
       fitPresent();
       if (!hidden) growBars(box);
       return;

@@ -176,6 +176,13 @@ Use ↑ ↓ to put it where it belongs.
 Up to 12 questions per slide. Editing a slide while it's showing updates
 students' phones right away.
 
+**Questions asked only once** (never brought back on a re-test) are tagged
+*asked once · go through it here* in the question list; ones that return say
+*back at step N*. While one is showing, the console reminds you to go through
+it, and the projector shows a small "go through now" note (on a slide, the
+question itself gets a maroon edge). Close voting and reveal with
+<kbd>space</kbd>, <kbd>space</kbd>.
+
 ### Student questions
 
 Click **Let students ask** in the *Student questions* panel and a box
