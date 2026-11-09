@@ -210,6 +210,17 @@ genotypes at 18 height-associated SNPs, to compute a polygenic score by hand
 each student's correct score. **Deal again** reshuffles. The SNPs and
 genotypes live in `prs-height.js`; the genotypes are made up for teaching.
 
+**Show prediction plot** puts a scatter of the class's celebrities on the
+screen: polygenic score across, height up, the same plot students can draw on
+the board. It opens on their reported heights (the `height` values in
+`prs-height.js`, approximate). The **R²** slider then shows what the plot
+would look like if the score explained that share of the variation in height:
+at 1 every dot sits on the line, at 0 it's a cloud. Each celebrity keeps the
+same unexplained "leftover" as the knob turns, so dots slide rather than jump,
+and at the reported heights' own R² they land exactly where the real data
+are. Presets: 0.4 (about what the best height scores reach today) and 0.8
+(roughly the heritability of height). The knob is only on your screen.
+
 ### Re-poll: before and after
 
 A revisit slide starts the second round automatically. Anywhere else,

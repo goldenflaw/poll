@@ -1,7 +1,9 @@
 // Height polygenic score activity. 18 height-associated SNPs, with the effect (beta) of
 // each copy of the effect allele, and each celebrity's genotype as the number of copies of
 // the effect allele they carry (0, 1 or 2). The genotypes are made up for teaching.
-// Extracted from PRS_height_2025.xlsx; to change the activity, edit this file.
+// `height` is the celebrity's publicly reported height in cm (approximate; edit freely),
+// used by the prediction plot. Extracted from PRS_height_2025.xlsx; edit this file to change
+// the activity.
 window.PRS_HEIGHT = {
  "snps": [
   {
@@ -189,7 +191,8 @@ window.PRS_HEIGHT = {
     1,
     2,
     2
-   ]
+   ],
+   "height": 163
   },
   {
    "name": "Natalie Portman",
@@ -212,7 +215,8 @@ window.PRS_HEIGHT = {
     0,
     0,
     0
-   ]
+   ],
+   "height": 160
   },
   {
    "name": "Scarlett Johansson",
@@ -235,7 +239,8 @@ window.PRS_HEIGHT = {
     1,
     0,
     0
-   ]
+   ],
+   "height": 160
   },
   {
    "name": "Billie Eilish",
@@ -258,7 +263,8 @@ window.PRS_HEIGHT = {
     0,
     0,
     0
-   ]
+   ],
+   "height": 161
   },
   {
    "name": "Britney Spears",
@@ -281,7 +287,8 @@ window.PRS_HEIGHT = {
     0,
     2,
     2
-   ]
+   ],
+   "height": 163
   },
   {
    "name": "Jennifer Aniston",
@@ -304,7 +311,8 @@ window.PRS_HEIGHT = {
     2,
     1,
     2
-   ]
+   ],
+   "height": 164
   },
   {
    "name": "Kristen Stewart",
@@ -327,7 +335,8 @@ window.PRS_HEIGHT = {
     0,
     0,
     2
-   ]
+   ],
+   "height": 165
   },
   {
    "name": "Ben Stiller",
@@ -350,7 +359,8 @@ window.PRS_HEIGHT = {
     1,
     1,
     2
-   ]
+   ],
+   "height": 170
   },
   {
    "name": "Kylie Jenner",
@@ -373,7 +383,8 @@ window.PRS_HEIGHT = {
     1,
     2,
     2
-   ]
+   ],
+   "height": 168
   },
   {
    "name": "Lionel Messi",
@@ -396,7 +407,8 @@ window.PRS_HEIGHT = {
     0,
     0,
     1
-   ]
+   ],
+   "height": 170
   },
   {
    "name": "Tom Cruise",
@@ -419,7 +431,8 @@ window.PRS_HEIGHT = {
     2,
     0,
     2
-   ]
+   ],
+   "height": 170
   },
   {
    "name": "Kanye West",
@@ -442,7 +455,8 @@ window.PRS_HEIGHT = {
     2,
     2,
     2
-   ]
+   ],
+   "height": 173
   },
   {
    "name": "Eminem",
@@ -465,7 +479,8 @@ window.PRS_HEIGHT = {
     0,
     1,
     0
-   ]
+   ],
+   "height": 173
   },
   {
    "name": "Dua Lipa",
@@ -488,7 +503,8 @@ window.PRS_HEIGHT = {
     2,
     1,
     2
-   ]
+   ],
+   "height": 173
   },
   {
    "name": "Angelina Jolie",
@@ -511,7 +527,8 @@ window.PRS_HEIGHT = {
     0,
     1,
     2
-   ]
+   ],
+   "height": 169
   },
   {
    "name": "Justin Bieber",
@@ -534,7 +551,8 @@ window.PRS_HEIGHT = {
     1,
     1,
     1
-   ]
+   ],
+   "height": 175
   },
   {
    "name": "Timothée Chalamet",
@@ -557,7 +575,8 @@ window.PRS_HEIGHT = {
     2,
     2,
     2
-   ]
+   ],
+   "height": 178
   },
   {
    "name": "Matthew McConaughey",
@@ -580,7 +599,8 @@ window.PRS_HEIGHT = {
     1,
     2,
     1
-   ]
+   ],
+   "height": 182
   },
   {
    "name": "Gisele Bündchen",
@@ -603,7 +623,8 @@ window.PRS_HEIGHT = {
     1,
     2,
     1
-   ]
+   ],
+   "height": 180
   },
   {
    "name": "Taylor Swift",
@@ -626,7 +647,8 @@ window.PRS_HEIGHT = {
     1,
     0,
     2
-   ]
+   ],
+   "height": 180
   },
   {
    "name": "Leonardo DiCaprio",
@@ -649,7 +671,8 @@ window.PRS_HEIGHT = {
     2,
     2,
     0
-   ]
+   ],
+   "height": 183
   },
   {
    "name": "Dr. Dre",
@@ -672,7 +695,8 @@ window.PRS_HEIGHT = {
     0,
     2,
     2
-   ]
+   ],
+   "height": 185
   },
   {
    "name": "Marie Kondo",
@@ -695,7 +719,8 @@ window.PRS_HEIGHT = {
     1,
     0,
     0
-   ]
+   ],
+   "height": 142
   },
   {
    "name": "LeBron James",
@@ -718,7 +743,8 @@ window.PRS_HEIGHT = {
     1,
     1,
     1
-   ]
+   ],
+   "height": 206
   },
   {
    "name": "Zendaya",
@@ -741,7 +767,8 @@ window.PRS_HEIGHT = {
     1,
     2,
     0
-   ]
+   ],
+   "height": 178
   },
   {
    "name": "Simone Biles",
@@ -764,7 +791,8 @@ window.PRS_HEIGHT = {
     1,
     1,
     2
-   ]
+   ],
+   "height": 142
   }
  ]
 };
