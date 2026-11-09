@@ -114,11 +114,13 @@ a new code.
    Voting opens automatically.
 3. Results stay hidden, so nobody is swayed by the room: the projector and
    phones show only how many have answered. **Close voting** (or
-   <kbd>space</kbd>) when you're done. A first round stays hidden after it
-   closes too, so it can't influence a later re-test. **Show results** (or
-   <kbd>R</kbd>) reveals them whenever you choose, on the projector and phones.
-4. <kbd>→</kbd> and <kbd>←</kbd> move between questions, <kbd>space</kbd>
-   opens/closes voting, <kbd>R</kbd> shows/hides results, <kbd>P</kbd> re-polls, <kbd>esc</kbd> leaves
+   <kbd>space</kbd>) when you're done; press <kbd>space</kbd> again to reveal
+   the results, on the projector and phones. A first round stays hidden after it
+   closes until you reveal it, so it can't influence a later re-test unless you
+   choose. **Show results** (or <kbd>R</kbd>) shows or hides them at any time.
+4. <kbd>→</kbd> and <kbd>←</kbd> move between questions; <kbd>space</kbd>
+   closes voting, then reveals the results, and a third press reopens voting;
+   <kbd>R</kbd> shows/hides results, <kbd>P</kbd> re-polls, <kbd>esc</kbd> leaves
    present mode. **Hide** returns everyone to a neutral waiting screen between
    topics.
 

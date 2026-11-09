@@ -1267,6 +1267,15 @@ async function teacher(room){
     if (!roomData.current) return;
     await updateDoc(roomRef(room), { reveal: !roomData.reveal });
   }
+  // Space moves a poll along, one press at a time: close voting → reveal the results →
+  // open voting again (results hide). Closing a re-polled round reveals straight away.
+  // Activity steps have no voting, so Space leaves them alone.
+  async function spaceKey(){
+    if (!roomData.current || stepOf(items().find(x => x.id === roomData.current))) return;
+    if (roomData.open) return toggleOpen();
+    if (!roomData.reveal) return toggleReveal();
+    return toggleOpen();
+  }
   async function clearVotes(){
     const ids = liveIds();
     if (!ids.length) return;
@@ -1531,7 +1540,7 @@ async function teacher(room){
     if (typing) return;
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
-    else if (e.key === " ") { e.preventDefault(); toggleOpen(); }
+    else if (e.key === " ") { e.preventDefault(); spaceKey(); }
     else if (e.key === "r" || e.key === "R") toggleReveal();
     else if (e.key === "p" || e.key === "P") repoll();
     else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot")) {
@@ -1754,7 +1763,8 @@ async function teacher(room){
         to start the second round; closing voting afterwards shows before and after together.</p>` : ""}
       <p class="muted" style="margin:12px 0 0">
         Results stay hidden while voting is open. While presenting: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> change question or slide,
-        <kbd>space</kbd> opens or closes voting, <kbd>R</kbd> shows or hides results, <kbd>P</kbd> re-polls,
+        <kbd>space</kbd> closes voting, then reveals the results (a third press reopens voting),
+        <kbd>R</kbd> shows or hides results, <kbd>P</kbd> re-polls,
         <kbd>esc</kbd> leaves present mode. A slide that brings back earlier questions starts their second round
         by itself; closing its voting shows before and after.</p>`;
     document.getElementById("prev").onclick   = () => step(-1);
