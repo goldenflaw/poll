@@ -159,6 +159,28 @@ window.FIREBASE_CONFIG = {
   .mine{margin-top:14px}
   #qabadge{display:none;position:fixed;bottom:56px;right:14px;z-index:9;font-size:.85rem}
 
+  /* activity: height polygenic score */
+  .prs-how{max-width:60ch;color:var(--ink);margin:0 0 18px}
+  .prs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 28px}
+  .prs-list div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line);min-width:0}
+  .prs-list span{overflow-wrap:anywhere}
+  .prs-list b{color:var(--accent);text-align:right;overflow-wrap:anywhere}
+  body.present .prs-how{font-size:1.3rem}
+  body.present .prs-list{font-size:1.15rem;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .celeb{font-size:2rem;font-weight:700;line-height:1.1;color:var(--accent);margin:2px 0 14px;text-wrap:balance}
+  table.geno,table.prs-key{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.92rem}
+  table.geno th,table.prs-key th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    font-weight:700;text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+  table.geno td,table.prs-key td{padding:6px 4px;border-bottom:1px solid var(--line)}
+  table.geno tr:nth-child(even) td{background:#f4f4f6}
+  table.geno td.n{color:var(--muted)}
+  table.geno th.greek{text-transform:none;font-size:.9rem}
+  table.geno td.c,table.geno th.c{text-align:center}
+  table.geno td.c{font-weight:700;font-size:1.05rem}
+  details.prs-ans summary{cursor:pointer;color:var(--steel);font-size:.9rem}
+  details.prs-ans table{margin-top:8px}
+  .choice.who{padding:12px 16px}
+
   /* join / QR */
   .join{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
   #qr{background:#fff;padding:10px;border:1px solid var(--line);border-radius:10px;line-height:0}
@@ -222,9 +244,9 @@ window.FIREBASE_CONFIG = {
   .exit-present:hover{opacity:1}
   body.present .exit-present{display:block}
   #joinbadge{display:none;position:fixed;bottom:14px;left:14px;z-index:9;
-    align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
-  #joinbadge canvas,#joinbadge img{width:64px;height:64px;display:block;border-radius:4px}
-  #joinbadge b{color:var(--ink);font:600 1rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
+    align-items:center;gap:12px;color:var(--muted);font-size:1rem}
+  #joinbadge canvas,#joinbadge img{width:128px;height:128px;display:block;border-radius:6px}
+  #joinbadge b{color:var(--ink);font:600 1.5rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
   body.present #joinbadge{display:flex}
 
   /* ticker: open student questions streaming across the bottom of the projector */
@@ -258,6 +280,7 @@ window.FIREBASE_CONFIG = {
 <div id="joinbadge"><div id="qrmini"></div><div>join at<br><b id="badgecode"></b></div></div>
 <div class="wrap" id="app"><p class="muted">Loading…</p></div>
 
+<script src="prs-height.js"></script>
 <script type="module">
 const app  = document.getElementById("app");
 const SDK  = "https://www.gstatic.com/firebasejs/10.12.2/";
@@ -491,6 +514,22 @@ function parseDeck(text, existing){
            revisits: fresh.length - newCount };
 }
 
+/* ---------- activity: height polygenic score ---------- */
+// The data (prs-height.js) holds 18 SNPs and each celebrity's genotypes. Effects are shown
+// to 4 decimal places and the answer key uses the same rounded values, so a careful hand
+// calculation matches it exactly.
+const PRS = window.PRS_HEIGHT || null;
+const prsBeta  = k => Math.round(PRS.snps[k].beta * 1e4) / 1e4;
+const prsScore = c => PRS.snps.reduce((sum, _, k) => sum + prsBeta(k) * PRS.people[c].dosage[k], 0);
+function prsScreenHTML(list){
+  return `<div class="stitle">Activity</div>
+    <div class="qtext">Compute your celebrity's height polygenic score</div>
+    <p class="prs-how">Find your name on your phone to see your celebrity's genotypes. For each of the 18 SNPs,
+      multiply the effect (β) by the number of copies of the effect allele, then add them all up.</p>
+    ${list.length ? `<div class="prs-list">${list.map(r =>
+      `<div><span>${esc(r.n)}</span><b>${esc(PRS.people[r.c].name)}</b></div>`).join("")}</div>` : ""}`;
+}
+
 // A news ticker for the projector. Each question slides right to left on its
 // own track position; once it has fully left on the left it rejoins the back of
 // the line, beyond the right edge. New questions join the back the same way, so
@@ -655,6 +694,14 @@ async function teacher(room){
         </div>
         <div id="qalist"></div>
       </div>
+
+      <div class="panel" id="prs">
+        <div class="row spread" style="margin-bottom:12px">
+          <h2 style="margin:0">Activity: height polygenic score</h2>
+          <button class="small primary" id="prsgo">Show on phones</button>
+        </div>
+        <div id="prsbody"></div>
+      </div>
     </div>
 
     <div id="spot"></div>
@@ -664,8 +711,8 @@ async function teacher(room){
   if (typeof QRCode === "function") {
     const opts = { text: joinUrl(room), colorDark:"#1a1a19", colorLight:"#ffffff",
                    correctLevel: QRCode.CorrectLevel.M };
-    new QRCode(document.getElementById("qr"),     { ...opts, width:148, height:148 });
-    new QRCode(document.getElementById("qrmini"), { ...opts, width:128, height:128 });
+    new QRCode(document.getElementById("qr"),     { ...opts, width:296, height:296 });
+    new QRCode(document.getElementById("qrmini"), { ...opts, width:256, height:256 });
   } else {
     document.getElementById("qr").innerHTML =
       `<p class="muted" style="line-height:1.5;margin:0;max-width:140px">QR library didn't load — share the link instead.</p>`;
@@ -930,7 +977,7 @@ async function teacher(room){
     // Questions that already have a second round (you came back to the slide) keep it.
     if (isRevisit(list, i))
       for (const qid of ids) if (!qById(qid).earlier) await newRound(qid);
-    await updateDoc(roomRef(room), { current: it.id, show: ids, title: titleFor(it), open: true, reveal: false });
+    await updateDoc(roomRef(room), { current: it.id, show: ids, title: titleFor(it), open: true, reveal: false, activity: null });
   }
   async function wipeVotes(qid){
     const vs = await getDocs(votesRef(room, qid));
@@ -1017,7 +1064,7 @@ async function teacher(room){
     if (next) await showItem(next.id);
   }
   async function hideAll(){
-    await updateDoc(roomRef(room), { current: null, show: [], title: null, open: false, reveal: false });
+    await updateDoc(roomRef(room), { current: null, show: [], title: null, open: false, reveal: false, activity: null });
   }
 
   /* ---- student questions ---- */
@@ -1100,6 +1147,79 @@ async function teacher(room){
     if (roomData.spot === aid) await updateDoc(roomRef(room), { spot: null });
   };
 
+  /* ---- activity: height polygenic score ---- */
+  // Each student taps their name on their phone and sees one celebrity's genotypes.
+  // The class list and who-has-whom live on the room doc (room.roster), so they stay
+  // in Firebase and never in the public site's files.
+  const roster = () => Array.isArray(roomData.roster) ? roomData.roster : [];
+  let prsEditing = false, prsSig = null;
+  function dealCelebs(names){
+    // A fresh random order each time; with more students than celebrities it starts over.
+    const order = PRS.people.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    return names.map((n, i) => ({ n, c: order[i % order.length] }));
+  }
+  document.getElementById("prsgo").onclick = () =>
+    updateDoc(roomRef(room), { activity: roomData.activity === "prs" ? null : "prs" });
+
+  function drawPrs(){
+    const el = document.getElementById("prsbody"), btn = document.getElementById("prsgo");
+    if (!PRS) {
+      btn.disabled = true;
+      el.innerHTML = `<p class="warn" style="margin:0">The activity's data file (prs-height.js) didn't load.</p>`;
+      return;
+    }
+    const on = roomData.activity === "prs", list = roster();
+    btn.textContent = on ? "Back to polls" : "Show on phones";
+    btn.className = "small" + (on ? "" : " primary");
+    btn.disabled = !on && !list.length;
+    const s = JSON.stringify([on, list, prsEditing]);
+    if (s === prsSig) return;
+    prsSig = s;
+    if (!list.length || prsEditing) {
+      el.innerHTML = `
+        <label for="prsnames">Class list, one name per line</label>
+        <textarea id="prsnames" style="min-height:170px" placeholder="First Last&#10;First Last">${esc(list.map(r => r.n).join("\n"))}</textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="primary small" id="prsdeal">${list.length ? "Save and deal again" : "Deal out celebrities"}</button>
+          ${list.length ? `<button class="ghost small" id="prscancel">Cancel</button>` : ""}
+          <span class="muted" id="prsmsg"></span>
+        </div>
+        <p class="muted" style="margin:8px 0 0">${PRS.people.length} celebrities, dealt out at random. The class list is
+          stored in your Firebase project, not in the public site.</p>`;
+      document.getElementById("prsdeal").onclick = async () => {
+        const names = document.getElementById("prsnames").value.split("\n").map(x => x.trim()).filter(Boolean);
+        if (!names.length) { document.getElementById("prsmsg").textContent = "Add at least one name."; return; }
+        if (names.length > 300) { document.getElementById("prsmsg").textContent = "That's more than 300 names."; return; }
+        prsEditing = false;
+        await updateDoc(roomRef(room), { roster: dealCelebs(names) });
+      };
+      const cancel = document.getElementById("prscancel");
+      if (cancel) cancel.onclick = () => { prsEditing = false; drawPrs(); };
+      return;
+    }
+    el.innerHTML = `
+      <p class="muted" style="margin:0 0 10px">${list.length} students, ${PRS.people.length} celebrities${
+        list.length > PRS.people.length ? " (some are used twice)" : ""}. ${on
+        ? "Phones show the class list; each student taps their name."
+        : "Press <b>Show on phones</b> when you're ready. Showing a poll afterwards brings phones back."}</p>
+      <details class="prs-ans">
+        <summary>Who has which celebrity, and the answers</summary>
+        <table class="prs-key"><thead><tr><th>Student</th><th>Celebrity</th><th>Score</th></tr></thead><tbody>
+          ${list.map(r => `<tr><td>${esc(r.n)}</td><td>${esc(PRS.people[r.c].name)}</td><td>${prsScore(r.c).toFixed(3)}</td></tr>`).join("")}
+        </tbody></table>
+      </details>
+      <div class="row" style="margin-top:10px">
+        <button class="ghost small" id="prsedit">Edit class list</button>
+        <button class="ghost small" id="prsredeal">Deal again</button>
+      </div>`;
+    document.getElementById("prsedit").onclick = () => { prsEditing = true; drawPrs(); };
+    document.getElementById("prsredeal").onclick = () => {
+      if (confirm("Deal the celebrities out again? Students will get different ones."))
+        updateDoc(roomRef(room), { roster: dealCelebs(list.map(r => r.n)) });
+    };
+  }
+
   /* ---- keyboard, for presenting ---- */
   addEventListener("keydown", e => {
     const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -1147,7 +1267,7 @@ async function teacher(room){
 
   function refresh(){
     bindVotes(liveIds());
-    drawList(); drawLive(); drawResults(); drawQA(); drawSpot(); syncTicker();
+    drawList(); drawLive(); drawResults(); drawQA(); drawSpot(); drawPrs(); syncTicker();
     syncShow();
   }
 
@@ -1394,6 +1514,11 @@ async function teacher(room){
   let shape = null;
   function drawResults(){
     const box = document.getElementById("results");
+    if (roomData.activity === "prs" && PRS) {
+      const s = JSON.stringify(["prs", roster()]);
+      if (s !== shape) { shape = s; app.classList.add("wide"); box.innerHTML = prsScreenHTML(roster()); fitPresent(); }
+      return;
+    }
     const qs = (roomData.current ? liveIds() : []).map(qById);
     app.classList.toggle("wide", qs.length > 2);
     if (!qs.length) {
@@ -1552,9 +1677,61 @@ async function student(room){
 
   // Re-render only when something this student can SEE changes — otherwise
   // the page would rebuild on every incoming vote and swallow a tap.
+  // The activity: tap your name, see your celebrity's genotypes. Which name this phone
+  // picked is remembered on the phone, so a reload goes straight back to it.
+  const PRS_KEY = "prs:" + room;
+  function prsMe(){
+    const list = Array.isArray(roomData.roster) ? roomData.roster : [];
+    try {
+      const me = JSON.parse(localStorage.getItem(PRS_KEY) || "null");
+      if (me && list[me.i] && list[me.i].n === me.n) return me.i;
+    } catch {}
+    return null;
+  }
+  window.__prsPick = i => {
+    const list = roomData.roster || [];
+    try {
+      if (i < 0) localStorage.removeItem(PRS_KEY);
+      else localStorage.setItem(PRS_KEY, JSON.stringify({ i, n: list[i].n }));
+    } catch {}
+    sig = null; draw(); scrollTo(0, 0);
+  };
+  function prsStudentHTML(){
+    const list = Array.isArray(roomData.roster) ? roomData.roster : [];
+    if (!PRS) return `<div class="status wait">This activity couldn't load. Reload the page.</div>`;
+    if (!list.length) return `<div class="status wait">Your instructor is getting the class list ready — keep this page open.</div>`;
+    const me = prsMe();
+    if (me === null) return `
+      <div class="stitle">Height polygenic score</div>
+      <div class="status">Tap your name to get your celebrity.</div>
+      ${list.map((r, i) => `<button class="choice who" onclick="__prsPick(${i})"><span>${esc(r.n)}</span></button>`).join("")}`;
+    const person = PRS.people[list[me].c];
+    return `
+      <div class="stitle">Height polygenic score</div>
+      <p class="muted" style="margin:0">${esc(list[me].n.split(" ")[0])}, your celebrity is</p>
+      <div class="celeb">${esc(person.name)}</div>
+      <p style="margin:0 0 14px">Compute the height polygenic score by summing the allelic effects at all 18 loci:
+        for each SNP, multiply the effect (β) by the number of copies of the effect allele, then add them up.</p>
+      <table class="geno">
+        <thead><tr><th>#</th><th>SNP</th><th class="c">Effect allele</th><th class="greek">β</th><th class="c">Copies</th></tr></thead>
+        <tbody>${PRS.snps.map((snp, k) => `
+          <tr><td class="n">${k + 1}</td><td>${esc(snp.id)}</td><td class="c">${esc(snp.effect)}</td>
+              <td>${prsBeta(k).toFixed(4)}</td><td class="c">${person.dosage[k]}</td></tr>`).join("")}
+        </tbody>
+      </table>
+      <p style="margin:14px 0 0"><button class="ghost small" onclick="__prsPick(-1)">Not you? Pick your name again</button></p>`;
+  }
+
   let sig = null;
   function draw(){
     if (!roomData) return;
+    if (roomData.activity === "prs") {
+      const next = JSON.stringify(["prs", roomData.roster || [], prsMe()]);
+      if (next === sig) return;
+      sig = next;
+      el.innerHTML = prsStudentHTML();
+      return;
+    }
     const ids = showIds();
     const open = !!roomData.open, reveal = !!roomData.reveal;
     const loaded = ids.every(id => id in qdata && (open ? id in mine : !reveal || id in votes));

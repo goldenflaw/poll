@@ -14,6 +14,7 @@ Three files:
 |---|---|
 | `index.html` | the whole app — teacher console, student view, live results |
 | `firestore.rules` | who is allowed to write what (paste into Firebase) |
+| `prs-height.js` | SNPs and celebrity genotypes for the polygenic-score activity |
 | `README.md` | this file |
 
 ---
@@ -189,6 +190,25 @@ anonymous, keep an eye on the panel while it's on.
 **Stop taking questions** removes the box from phones. **Clear all** empties
 the list for next time. A phone can send at most one question every 8 seconds,
 and each question is limited to 500 characters.
+
+### Activity: compute a height polygenic score
+
+The *Activity* panel in the console hands every student a celebrity's
+genotypes at 18 height-associated SNPs, to compute a polygenic score by hand
+(sum of β × copies of the effect allele).
+
+1. Paste the class list, one name per line, and click **Deal out
+   celebrities**. Each student gets a different celebrity until all of them
+   have been used. The list is stored in your Firebase project with the
+   session, not in this public repository.
+2. **Show on phones.** Phones switch from the poll to the class list; each
+   student taps their name and sees their celebrity's table. The projector
+   shows the instructions and who has which celebrity.
+3. Showing any poll (or **Back to polls**) returns phones to polling.
+
+*Who has which celebrity, and the answers* (collapsed, console only) lists
+each student's correct score. **Deal again** reshuffles. The SNPs and
+genotypes live in `prs-height.js`; the genotypes are made up for teaching.
 
 ### Re-poll: before and after
 
