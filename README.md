@@ -152,6 +152,7 @@ IMG: slides/figure.png A title       ← a picture, full screen
 SNP:                                 ← the one-SNP regression demo (below)
 EQTL:                                ← the same demo for a gene's expression: an eQTL
 SCAN:                                ← the class eQTL scan, one gene per phone (below)
+COLOC:                               ← GWAS and eQTL at one locus, with an LD knob (below)
 // notes like an answer key are ignored
 ```
 
@@ -210,6 +211,32 @@ p = 0.3, where the SNP explains 30% of the variation (R² = 0.30), against
 β runs from 0.01 to 2 (presets 0, 0.05, 0.2, 0.5, 1 and 2), p from 1 in 100 to
 0.5, and the p-values are for 50, 100, 200, 400 and 1,000 people, the size of
 eQTL studies: at the opening setting 100 people already pass p < 5 × 10⁻⁸.
+
+**The colocalization demo** (`COLOC:`, optionally followed by a title) shows one
+made-up 600 kb locus twice, LocusZoom style: association with a trait (GWAS) on
+top, with Gene X's expression (eQTL) below, and the genes underneath. Dots are
+coloured by r² with the GWAS lead SNP (◆); the eQTL's own lead is ◇. Knobs, on
+your screen only:
+
+- **One, shared / Two different** causal variants (<kbd>shift</kbd> <kbd>↑</kbd>
+  <kbd>↓</kbd> switches).
+- **LD between them**, the r² between the two causal variants, 0 to about 0.96
+  (presets 0, 0.3, 0.6, 0.8, 0.9, 0.95 and max; <kbd>↑</kbd> <kbd>↓</kbd> by
+  0.05). The eQTL's variant slides along the locus: far away and the peaks
+  separate; close and they sit on top of each other. Only the eQTL panel moves.
+- **Show the causal variants** rings them.
+
+Beside it, **coloc's verdict**: the posterior probabilities of one shared causal
+variant (H4) and of two different ones (H3), from the z-scores alone, as coloc
+(Giambartolomei et al. 2014) computes them with its default priors. It opens on
+two different variants at r² = 0.80, where the peaks overlap and the leads are
+18 kb apart, yet coloc favours two variants (88%); from about r² = 0.9 it can no
+longer tell them apart and says shared (96% at 0.92). With one shared variant,
+coloc says > 99%, even though sampling noise puts the eQTL's lead on a
+neighbouring SNP. LD decays with distance along a genetic map with recombination
+hotspots, each SNP follows the local haplotypes more or less closely (so many
+neighbours of a lead sit well below it, as in real loci), and both studies'
+noise carries the same LD.
 
 ### Slides: several questions at once
 

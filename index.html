@@ -219,6 +219,42 @@ window.FIREBASE_CONFIG = {
   .snp-formula{margin:0;font-size:1.2rem;color:var(--ink);line-height:1.5;font-variant-numeric:tabular-nums}
   .snp-formula > span{display:block;white-space:nowrap}
 
+  /* colocalization: GWAS and eQTL at one locus, with an LD knob */
+  .coloc .snp-left > svg{max-height:64vh}
+  body.present .coloc .snp-main{grid-template-columns:minmax(0,max(780px,calc(64vh * 900 / 600))) 440px}
+  .coloc .cax line{stroke:var(--line)}
+  .coloc .cax text{font-size:16px;fill:var(--muted)}
+  .coloc .cax .lbl{font-size:18px;fill:var(--ink);font-weight:600}
+  .coloc .cax .ptitle{font-size:19px;fill:var(--ink);font-weight:700}
+  .coloc .cdot{stroke:#fff;stroke-width:.8}
+  .coloc .b0{fill:#cfcfd6} .coloc .b1{fill:#e6b1b1} .coloc .b2{fill:#cf7676} .coloc .b3{fill:#a83c3c} .coloc .b4{fill:#800000}
+  .coloc .clead{fill:var(--ink);stroke:#fff;stroke-width:1.5}
+  .coloc .clead.e{fill:#fff;stroke:var(--ink);stroke-width:2.5}
+  .coloc .ccause{fill:none;stroke:var(--steel);stroke-width:3}
+  .coloc .ccauselbl{font-size:16px;font-weight:700;fill:var(--steel)}
+  .coloc .cgw{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 5}
+  .coloc .cgwlbl{font-size:14px;fill:var(--muted)}
+  .coloc .gene rect,.coloc .gene path{fill:#b9b9c2}
+  .coloc .gene text{font-size:16px;fill:var(--muted);font-weight:600}
+  .coloc .gene.gx rect,.coloc .gene.gx path{fill:var(--ink)}
+  .coloc .gene.gx text{fill:var(--ink);font-weight:700}
+  .ckey{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:1rem;color:var(--muted)}
+  .ckey span{display:flex;align-items:center;gap:6px}
+  .ckey i{display:inline-block;width:13px;height:13px;border-radius:50%}
+  .ckey .b0{background:#cfcfd6} .ckey .b1{background:#e6b1b1} .ckey .b2{background:#cf7676} .ckey .b3{background:#a83c3c} .ckey .b4{background:#800000}
+  .coloc .snp-box button{font-size:1rem;padding:8px 13px;justify-self:start}
+  .coloc .snp-box button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .coloc .snp-side input[type=range]:disabled{opacity:.35}
+  .cpp{display:grid;gap:6px}
+  .cpp > div:not(.snp-bar){display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:1.15rem;color:var(--ink)}
+  .cpp small{font-size:.85rem;color:var(--muted);font-weight:600;margin-left:4px}
+  .cpp b{font-size:1.6rem;font-variant-numeric:tabular-nums;min-width:4ch;text-align:right}
+  .cpp .snp-bar{height:16px;margin-bottom:6px}
+  .cpp .snp-bar.h3 i{background:var(--steel)}
+  .cpp .rest{font-size:1rem !important;color:var(--muted) !important}
+  .cpp .rest b{font-size:1.1rem}
+  .cleads{margin:0;font-size:1.1rem;color:var(--ink);line-height:1.45;min-height:3em}
+
   /* class eQTL scan: one gene per phone, then the class's p-values on screen */
   .gene-plot{width:100%;height:auto;display:block;margin:4px 0 6px}
   .gene-plot .gax line{stroke:var(--line)}
@@ -679,7 +715,7 @@ function parseDeck(text, existing){
     }
     if (disc && /^[-*•]\s*/.test(line)) { disc.points.push(line.replace(/^[-*•]\s*/, "").slice(0, 300)); return; }
     disc = null;
-    if ((m = line.match(/^(SNP|EQTL|SCAN)\s*[:.)]\s*(.*)$/i))) {
+    if ((m = line.match(/^(SNP|EQTL|SCAN|COLOC)\s*[:.)]\s*(.*)$/i))) {
       finishQ(); finishSlide();
       items.push({ kind: m[1].toLowerCase(), title: m[2].trim().slice(0, 299), line: n });
       return;
@@ -705,14 +741,14 @@ function parseDeck(text, existing){
       if (q) q.options.push(m[1].trim());
       else errors.push(`Line ${n}: an option with no question above it.`);
     } else {
-      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the class eQTL scan with “SCAN:”, options with “-” and slides with “#”.`);
+      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the class eQTL scan with “SCAN:”, the colocalization demo with “COLOC:”, options with “-” and slides with “#”.`);
     }
   });
   finishQ(); finishSlide();
   const newCount = fresh.filter(x => !x.reuse).length;
   const count = k => items.filter(x => x.kind === k).length;
   return { items, errors, newCount, slideCount: count("s"), revisits: fresh.length - newCount,
-           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), scans: count("scan") };
+           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), scans: count("scan"), colocs: count("coloc") };
 }
 
 /* ---------- activity: height polygenic score ---------- */
@@ -1542,6 +1578,197 @@ function scanScreenHTML(o){
     </div>`;
 }
 
+/* ---------- demo: colocalization, with an LD knob ---------- */
+// A made-up 600 kb locus with a GWAS signal for a trait and an eQTL for Gene X. Either one variant
+// causes both, or two different variants do, with the LD between them on a knob. LD decays with
+// genetic distance, r = e^(−d/ℓ), and recombination hotspots break the locus into blocks; each
+// study's sampling noise carries the same LD. coloc (Giambartolomei et al. 2014, approximate
+// Bayes factors with its default priors) then weighs one shared causal variant (H4) against two
+// different ones (H3), from the z-scores alone, as it would with real summary statistics.
+const COLOC_TITLE = "Colocalization: one causal variant, or two in LD?";
+const COLOC_Z1 = 9, COLOC_Z2 = 10;              // the causal variants' expected z-scores: GWAS, eQTL
+const COLOC_N1 = 100000, COLOC_N2 = 500;        // study sizes, for coloc's Bayes factors
+const COLOC_GENES = [{ name: "Gene Y", a: 95, b: 190, dir: 1 }, { name: "Gene X", a: 300, b: 365, dir: -1, x: true },
+                     { name: "Gene Z", a: 430, b: 540, dir: 1 }];
+const COLOC = (() => {
+  const rnd = rng32(hash32("coloc-locus-1"));
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const L = 6;                                   // LD decay, in genetic-distance units
+  // No hotspot just right of the trait's variant (330 kb), so LD with it fades gradually on that
+  // side and the LD knob has every value from 0 to 1 to pick from.
+  const hot = []; for (let h = 35 + rnd() * 30; h < 600; h += 45 + rnd() * 45) if (h < 335 || h > 430) hot.push(h);
+  const pos = []; for (let x = 2 + rnd() * 2; x < 598; x += 0.6 + rnd() * 4.4) pos.push(x);
+  const gd = [0];
+  for (let i = 1; i < pos.length; i++)
+    gd.push(gd[i - 1] + 0.03 * (pos[i] - pos[i - 1]) + hot.filter(h => h > pos[i - 1] && h <= pos[i]).length * (0.8 + rnd() * 2.2));
+  const n = pos.length, K = (i, j) => Math.exp(-Math.abs(gd[i] - gd[j]) / L);
+  // the trait's causal variant: the SNP nearest 330 kb, inside Gene X
+  let c1 = 0; pos.forEach((x, i) => { if (Math.abs(x - 330) < Math.abs(pos[c1] - 330)) c1 = i; });
+  // Not every SNP follows the local haplotypes closely (think of a rarer allele next to a common
+  // one): each SNP gets a tie a to them, so r = a_i·a_j·e^(−d/ℓ), and many neighbours of the lead
+  // SNP sit well below it, as in real loci. Still a valid LD matrix: A·K·A + (I − A²).
+  const a = pos.map((_, i) => i === c1 ? 1 : rnd() < 0.55 ? 0.97 + 0.03 * rnd() : 0.15 + 0.8 * rnd());
+  const r = (i, j) => i === j ? 1 : a[i] * a[j] * K(i, j);
+  // noise with the locus's LD: an Ornstein–Uhlenbeck path along the genetic map, each SNP tied to it by a
+  const noise = () => {
+    const e = [gauss()];
+    for (let i = 1; i < n; i++) { const p = K(i, i - 1); e.push(p * e[i - 1] + Math.sqrt(1 - p * p) * gauss()); }
+    return e.map((v, i) => a[i] * v + Math.sqrt(1 - a[i] * a[i]) * gauss());
+  };
+  const e1 = noise(), e2 = noise();
+  const z1 = pos.map((_, i) => COLOC_Z1 * r(i, c1) + e1[i]);
+  const z2for = c2 => pos.map((_, i) => COLOC_Z2 * r(i, c2) + e2[i]);
+  const lead1 = z1.reduce((b, v, i) => Math.abs(v) > Math.abs(z1[b]) ? i : b, 0);
+  const nlp = z => -log10P(z);
+  const y1max = Math.max(...z1.map(nlp));
+  // candidates for the eQTL's own causal variant: SNPs right of the trait's that follow the haplotypes
+  const cands = pos.map((_, j) => j).filter(j => pos[j] > pos[c1] && pos[j] < 560 && a[j] >= 0.97);
+  let y2max = 0; for (const j of [c1, ...cands]) for (const v of z2for(j)) y2max = Math.max(y2max, nlp(v));
+  return { pos, n, r, a, c1, z1, z2for, lead1, nlp, y1max, y2max, hot, cands };
+})();
+// The LD knob asks for an r² with the trait's causal variant; the eQTL's causal variant is the SNP
+// to its right (one that follows the haplotypes) closest to that, nearest to the trait's variant
+// among near-ties, so as LD drops the eQTL's peak slides steadily away.
+function colocPick(t){
+  const C = COLOC, off = j => Math.abs(C.r(j, C.c1) ** 2 - t), far = j => Math.abs(C.pos[j] - C.pos[C.c1]);
+  const js = C.cands;
+  const min = Math.min(...js.map(off));
+  return js.filter(j => off(j) <= min + 0.004).reduce((b, j) => far(j) < far(b) ? j : b);
+}
+const logSumExp = a => { const m = Math.max(...a); return m + Math.log(a.reduce((s, v) => s + Math.exp(v - m), 0)); };
+// coloc.abf: per-SNP log Bayes factors from z (prior sd 0.15 on the standardized effect), then
+// H0 none, H1 GWAS only, H2 eQTL only, H3 both with different variants, H4 both, one shared variant.
+function colocPP(z1, z2){
+  const W2 = 0.15 * 0.15, k1 = W2 / (W2 + 1 / COLOC_N1), k2 = W2 / (W2 + 1 / COLOC_N2);
+  const l1 = z1.map(z => 0.5 * Math.log(1 - k1) + 0.5 * k1 * z * z), l2 = z2.map(z => 0.5 * Math.log(1 - k2) + 0.5 * k2 * z * z);
+  const s1 = logSumExp(l1), s2 = logSumExp(l2), s12 = logSumExp(l1.map((v, i) => v + l2[i]));
+  const p1 = 1e-4, p2 = 1e-4, p12 = 1e-5;
+  const both = s1 + s2, h3 = both + Math.log(Math.max(1e-300, 1 - Math.exp(s12 - both)));
+  const h = [0, Math.log(p1) + s1, Math.log(p2) + s2, Math.log(p1) + Math.log(p2) + h3, Math.log(p12) + s12];
+  const m = logSumExp(h);
+  return h.map(v => Math.exp(v - m));
+}
+// r² with the GWAS lead SNP, in five bins of one colour (light to dark)
+const COLOC_BINS = [0.2, 0.4, 0.6, 0.8];
+const colocBin = r2 => COLOC_BINS.filter(b => r2 >= b).length;
+
+function colocHTML(title){
+  const C = COLOC, W = 900, H = 600, L = 70, R = 20;
+  const p1 = { t: 34, b: 230 }, p2 = { t: 300, b: 496 }, gt = 520;
+  const px = x => L + x / 600 * (W - L - R);
+  const ticks = (max, p) => { const top = Math.ceil(max / 5) * 5, step = top > 30 ? 10 : 5, out = [];
+    for (let v = 0; v <= top; v += step) out.push([v, p.b - v / top * (p.b - p.t)]); return { top, out }; };
+  const t1 = ticks(C.y1max, p1), t2 = ticks(C.y2max, p2);
+  const yOf = (v, p, top) => p.b - Math.min(v, top) / top * (p.b - p.t);
+  const gw = yOf(-GW_LOG10, p1, t1.top);
+  const lead = C.lead1;
+  const cls = i => `cdot b${colocBin(C.r(i, lead) ** 2)}`;
+  const panel = (p, t, name) => `
+      <g class="cax">${t.out.map(([v, y]) => `<line x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${L - 10}" y="${(y + 6).toFixed(1)}" text-anchor="end">${v}</text>`).join("")}
+        <text class="lbl" transform="translate(20 ${(p.t + p.b) / 2}) rotate(-90)" text-anchor="middle">−log₁₀ p</text>
+        <text class="ptitle" x="${L + 10}" y="${p.t - 12}">${name}</text></g>`;
+  const dots = (k) => C.pos.map((x, i) => i === lead ? "" : `<circle class="${cls(i)}" data-i="${i}" data-p="${k}" r="5" cx="${px(x).toFixed(1)}"/>`).join("");
+  const diamond = (k, extra) => `<path class="clead ${extra || ""}" data-p="${k}" d="M0 -9 L9 0 L0 9 L-9 0 Z"/>`;
+  const genes = COLOC_GENES.map(g => {
+    const x0 = px(g.a), x1 = px(g.b), y = gt + 14, ah = g.dir > 0 ? `M${x1} ${y} l-9 -6 v12 Z` : `M${x0} ${y} l9 -6 v12 Z`;
+    return `<g class="gene ${g.x ? "gx" : ""}"><rect x="${x0.toFixed(1)}" y="${y - 5}" width="${(x1 - x0).toFixed(1)}" height="10" rx="2"/><path d="${ah}"/>
+      <text x="${((x0 + x1) / 2).toFixed(1)}" y="${y - 12}" text-anchor="middle">${g.name}</text></g>`;
+  }).join("");
+  const xt = [0, 100, 200, 300, 400, 500, 600].map(v => `<text x="${px(v).toFixed(1)}" y="${H - 24}" text-anchor="middle">${v}</text>`).join("");
+  return { geom: { px, yOf, p1, p2, t1: t1.top, t2: t2.top }, html: `
+    <div class="snp-slide">
+    <div class="stitle">Colocalization</div>
+    <div class="qtext" style="margin-bottom:8px">${esc(title || COLOC_TITLE)}</div>
+    <div class="snp coloc" id="coloc">
+      <div class="snp-main">
+        <div class="snp-left">
+        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Association with the trait (GWAS) and with Gene X's expression (eQTL) along a 600 kb locus">
+          ${panel(p1, t1, "GWAS: the trait")}
+          ${panel(p2, t2, "eQTL: expression of Gene X")}
+          <line class="cgw" x1="${L}" x2="${W - R}" y1="${gw.toFixed(1)}" y2="${gw.toFixed(1)}"/>
+          <text class="cgwlbl" x="${W - R}" y="${(gw - 6).toFixed(1)}" text-anchor="end">p = 5 × 10⁻⁸</text>
+          <g>${dots(1)}${dots(2)}</g>
+          ${diamond(1)}${diamond(2)}${diamond(2, "e")}
+          <circle class="ccause" data-k="1" r="13"/><circle class="ccause" data-k="2" r="13"/>
+          <text class="ccauselbl" data-k="1"></text><text class="ccauselbl" data-k="2"></text>
+          <g class="genes">${genes}</g>
+          <g class="cax">${xt}<text class="lbl" x="${(L + W - R) / 2}" y="${H - 2}" text-anchor="middle">Position (kb)</text></g>
+        </svg>
+        <div class="ckey"><span>r² with the GWAS lead SNP (◆):</span>${["< 0.2", "0.2–0.4", "0.4–0.6", "0.6–0.8", "≥ 0.8"].map((l, b) => `<span><i class="b${b}"></i>${l}</span>`).join("")}</div>
+        </div>
+        <div class="snp-side">
+          <div class="snp-box">
+            <h4>The causal variants</h4>
+            <div class="seg">
+              <button class="small ghost" data-same="1">One, shared</button>
+              <button class="small ghost" data-same="0">Two different</button>
+            </div>
+            <div class="snp-knob"><label for="cld">LD between them</label><span class="plot-read" id="cldread"></span></div>
+            <input type="range" id="cld" min="0" max="100" step="1" value="80">
+            <div class="plot-presets">${[0, 0.3, 0.6, 0.8, 0.9, 0.95, 1].map(v => `<button class="small ghost" data-ld="${v}">${v === 1 ? "max" : v}</button>`).join("")}</div>
+            <button class="small ghost" id="ccausebtn">Show the causal variants</button>
+          </div>
+          <div class="snp-box">
+            <h4>coloc's verdict</h4>
+            <div class="cpp">
+              <div><span>One shared causal variant <small>H4</small></span><b id="pp4"></b></div><div class="snp-bar"><i id="pp4bar"></i></div>
+              <div><span>Two different causal variants <small>H3</small></span><b id="pp3"></b></div><div class="snp-bar h3"><i id="pp3bar"></i></div>
+              <div class="rest"><span>Not both <small>H0–H2</small></span><b id="pp0"></b></div>
+            </div>
+          </div>
+          <div class="snp-box">
+            <h4>The lead SNPs</h4>
+            <p class="cleads" id="cleads"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>` };
+}
+
+function colocPaint(root, g, st){
+  const C = COLOC;
+  const c2 = st.same ? C.c1 : colocPick(st.ld);
+  const z2 = C.z2for(c2), lead2 = z2.reduce((b, v, i) => Math.abs(v) > Math.abs(z2[b]) ? i : b, 0);
+  const y1 = i => g.yOf(C.nlp(C.z1[i]), g.p1, g.t1), y2 = i => g.yOf(C.nlp(z2[i]), g.p2, g.t2);
+  root.querySelectorAll(".cdot").forEach(c => {
+    const i = +c.dataset.i;
+    c.setAttribute("cy", (c.dataset.p === "1" ? y1(i) : y2(i)).toFixed(1));
+  });
+  const at = (el, x, y) => el.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+  const [d1, d2, de] = root.querySelectorAll(".clead");
+  at(d1, g.px(C.pos[C.lead1]), y1(C.lead1));
+  at(d2, g.px(C.pos[C.lead1]), y2(C.lead1));
+  // the eQTL's own lead, when it isn't the GWAS lead
+  de.style.display = lead2 === C.lead1 ? "none" : "";
+  at(de, g.px(C.pos[lead2]), y2(lead2));
+  const show = !!st.cause;
+  const rings = root.querySelectorAll(".ccause"), labels = root.querySelectorAll(".ccauselbl");
+  [[C.c1, y1(C.c1), st.same ? "causal for both" : "causal for the trait"], [c2, y2(c2), st.same ? "causal for both" : "causal for expression"]].forEach(([i, y, t], k) => {
+    rings[k].setAttribute("cx", g.px(C.pos[i]).toFixed(1)); rings[k].setAttribute("cy", y.toFixed(1));
+    rings[k].style.display = show ? "" : "none";
+    const left = C.pos[i] > 430, lx = g.px(C.pos[i]) + (left ? -18 : 18);     // near the right edge, label to the left
+    labels[k].setAttribute("x", lx.toFixed(1)); labels[k].setAttribute("y", (y - 14).toFixed(1));
+    labels[k].setAttribute("text-anchor", left ? "end" : "start");
+    labels[k].textContent = t; labels[k].style.display = show ? "" : "none";
+  });
+  const pp = colocPP(C.z1, z2), pct = v => v >= 0.995 ? "> 99%" : v < 0.005 ? "< 1%" : Math.round(v * 100) + "%";
+  root.querySelector("#pp4").textContent = pct(pp[4]); root.querySelector("#pp4bar").style.width = (pp[4] * 100).toFixed(1) + "%";
+  root.querySelector("#pp3").textContent = pct(pp[3]); root.querySelector("#pp3bar").style.width = (pp[3] * 100).toFixed(1) + "%";
+  root.querySelector("#pp0").textContent = pct(pp[0] + pp[1] + pp[2]);
+  const r2c = C.r(c2, C.c1) ** 2, r2l = C.r(lead2, C.lead1) ** 2, kb = Math.abs(C.pos[lead2] - C.pos[C.lead1]);
+  root.querySelector("#cldread").innerHTML = st.same ? `<small>same variant</small>` : `r² = ${r2c.toFixed(2)}`;
+  root.querySelector("#cld").value = Math.round(st.ld * 100);
+  root.querySelector("#cld").disabled = st.same;
+  root.querySelectorAll("[data-ld]").forEach(b => { b.disabled = st.same; b.classList.toggle("on", !st.same && Math.abs(+b.dataset.ld - st.ld) < 1e-9); });
+  root.querySelectorAll("[data-same]").forEach(b => b.classList.toggle("on", (b.dataset.same === "1") === st.same));
+  root.querySelector("#ccausebtn").textContent = show ? "Hide the causal variants" : "Show the causal variants";
+  root.querySelector("#ccausebtn").classList.toggle("on", show);
+  root.querySelector("#cleads").innerHTML = lead2 === C.lead1
+    ? `The GWAS and the eQTL have the <b>same lead SNP</b>.`
+    : `GWAS lead ◆ and eQTL lead ◇: <b>${kb < 1 ? "under 1" : Math.round(kb)} kb</b> apart, r² = <b>${r2l.toFixed(2)}</b>.`;
+}
+
 function figureHTML(src, title){
   return safeSrc(src) ? `<figure class="fig"><img src="${esc(src)}" alt="${esc(title || "")}"></figure>`
                       : `<p class="warn">Can't show this image: ${esc(src || "no file")}</p>`;
@@ -1800,7 +2027,7 @@ async function teacher(room){
   // "plot" (the prediction plot on screen), so arrow keys walk through them like polls.
   const stepOf   = it => it && it.kind === "s" ? it.s.step || null : null;
   const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot", image: "Image", snp: "One SNP's R²",
-                      eqtl: "An eQTL's R²", scan: "Class eQTL scan", discuss: "Discussion" };
+                      eqtl: "An eQTL's R²", scan: "Class eQTL scan", coloc: "Colocalization", discuss: "Discussion" };
   // Sessions saved before slides existed have `current` but no `show`.
   const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
                           : roomData.current ? [roomData.current] : []).filter(id => qById(id));
@@ -1953,6 +2180,7 @@ async function teacher(room){
           brings back the earlier question with the same wording · <code class="inline">D:</code> a discussion prompt ·
           <code class="inline">IMG:</code> a picture · <code class="inline">SNP:</code> the one-SNP regression demo
           (<code class="inline">EQTL:</code> the same for a gene's expression) · <code class="inline">SCAN:</code> the class eQTL scan ·
+          <code class="inline">COLOC:</code> the colocalization demo ·
           <code class="inline">//</code> notes are ignored.</p>
         <label class="check" style="margin-top:8px"><input type="checkbox" id="atstart">
           <span>Add at the start of the lecture <span class="muted">— otherwise everything goes after your current questions</span></span></label>
@@ -1978,7 +2206,8 @@ async function teacher(room){
           (parsed.images ? `, ${parsed.images} image${parsed.images === 1 ? "" : "s"}` : "") +
           (parsed.snps ? `, ${parsed.snps} one-SNP demo${parsed.snps === 1 ? "" : "s"}` : "") +
           (parsed.eqtls ? `, ${parsed.eqtls} eQTL demo${parsed.eqtls === 1 ? "" : "s"}` : "") +
-          (parsed.scans ? `, ${parsed.scans} class eQTL scan${parsed.scans === 1 ? "" : "s"}` : "") + ".";
+          (parsed.scans ? `, ${parsed.scans} class eQTL scan${parsed.scans === 1 ? "" : "s"}` : "") +
+          (parsed.colocs ? `, ${parsed.colocs} colocalization demo${parsed.colocs === 1 ? "" : "s"}` : "") + ".";
     };
     document.getElementById("cancel").onclick = () => closeEditor();
     btn.onclick = async () => {
@@ -2013,6 +2242,10 @@ async function teacher(room){
       }
       if (it.kind === "snp" || it.kind === "eqtl") {
         writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || SNP_KINDS[it.kind].title, qids: [], order: order++, step: it.kind }]);
+        continue;
+      }
+      if (it.kind === "coloc") {
+        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || COLOC_TITLE, qids: [], order: order++, step: "coloc" }]);
         continue;
       }
       if (it.kind === "scan") {
@@ -2060,9 +2293,9 @@ async function teacher(room){
   async function showItem(id){
     if (plotOn) document.getElementById("prsplot").click();
     const stepIt = items().find(x => x.id === id), step = stepOf(stepIt);
-    if (step === "snp" || step === "eqtl") {
+    if (step === "snp" || step === "eqtl" || step === "coloc") {
       // On screen only (the knob is yours); phones say to look at the screen.
-      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || SNP_KINDS[step].title,
+      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || (step === "coloc" ? COLOC_TITLE : SNP_KINDS[step].title),
                                        open: false, reveal: false, activity: "screen" });
       return;
     }
@@ -2432,6 +2665,30 @@ async function teacher(room){
     fitPresent();
   }
 
+  // The colocalization demo. The knobs are yours, on screen only: one shared causal variant or two
+  // different ones, and the LD between them (drag, click a preset, or ↑ ↓ by 0.05); shift ↑ ↓
+  // switches between one and two variants.
+  function drawColoc(box, cur){
+    const sg = JSON.stringify(["coloc", cur.id, cur.s.title]);
+    if (sg === shape) return;
+    shape = sg;
+    app.classList.add("wide");
+    const { html, geom } = colocHTML(cur.s.title);
+    box.innerHTML = html;
+    const st = { same: false, ld: 0.8, cause: false };
+    const paint = () => colocPaint(box, geom, st);
+    const slider = box.querySelector("#cld");
+    slider.oninput = () => { st.ld = +slider.value / 100; paint(); };
+    slider.onchange = () => slider.blur();
+    box.querySelectorAll("[data-ld]").forEach(b => b.onclick = () => { st.ld = +b.dataset.ld; paint(); });
+    box.querySelectorAll("[data-same]").forEach(b => b.onclick = () => { st.same = b.dataset.same === "1"; paint(); });
+    box.querySelector("#ccausebtn").onclick = () => { st.cause = !st.cause; paint(); };
+    box.__nudge = step => { if (st.same) return; st.ld = Math.round(Math.min(1, Math.max(0, st.ld + step)) * 100) / 100; paint(); };
+    box.__nudgeN = () => { st.same = !st.same; paint(); };
+    paint();
+    fitPresent();
+  }
+
   // The class eQTL scan on screen. Which genes are the class's comes from the votes (each vote
   // is stored under the student's sign-in id, which picks their gene). The view of all 20,000
   // genes is yours, on screen only; which genes are real (T) goes to phones too.
@@ -2526,7 +2783,7 @@ async function teacher(room){
     else if ((e.key === "t" || e.key === "T" || e.key === "g" || e.key === "G") && document.querySelector("#results #scan")) {
       if (e.key.toLowerCase() === "t") scanTruth(); else scanGenomeToggle();
     }
-    else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot, #results #snp")) {
+    else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot, #results #snp, #results #coloc")) {
       e.preventDefault();
       const box = document.getElementById("results"), up = e.key === "ArrowUp";
       if (e.shiftKey && box.__nudgeN) box.__nudgeN(up ? 1 : -1);
@@ -2649,6 +2906,19 @@ async function teacher(room){
         <span class="body">
           <span class="t">${esc(it.s.title || SNP_KINDS[stepOf(it)].title)}</span>
           <span class="m">${stepOf(it) === "snp" ? "Height" : "A gene's expression"} against one SNP's genotype, with an effect-size knob${live ? " · showing now" : ""}</span>
+        </span>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
+          ${moves}
+        </span>
+      </div>`;
+      if (stepOf(it) === "coloc") return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <span class="body">
+          <span class="t">${esc(it.s.title || COLOC_TITLE)}</span>
+          <span class="m">GWAS and eQTL at one locus, with an LD knob and coloc's verdict${live ? " · showing now" : ""}</span>
         </span>
         <span class="acts">
           ${show}
@@ -2901,6 +3171,7 @@ async function teacher(room){
     if ((plotOn || stepOf(cur) === "plot") && PRS) return drawPlot(box);
     if (stepOf(cur) === "snp" || stepOf(cur) === "eqtl") return drawSnp(box, cur, SNP_KINDS[stepOf(cur)]);
     if (stepOf(cur) === "scan") return drawScan(box, cur);
+    if (stepOf(cur) === "coloc") return drawColoc(box, cur);
     if (stepOf(cur) === "image") {
       const sig = JSON.stringify(["image", cur.id, cur.s.src]);
       if (sig !== shape) {
