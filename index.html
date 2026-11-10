@@ -202,7 +202,8 @@ window.FIREBASE_CONFIG = {
   .plot{display:grid;gap:12px}
   .plot svg{width:100%;height:auto;max-height:66vh;display:block;overflow:visible}
   .plot-main{display:grid;gap:14px 28px;align-items:center}
-  body.present .plot-main{grid-template-columns:minmax(0,1fr) 360px}
+  /* the plot's column is exactly as wide as the plot at its full height, so the GWAS panel sits right beside it */
+  body.present .plot-main{grid-template-columns:minmax(0,calc(66vh * 1000 / 540)) 360px;justify-content:start}
   .gwas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:8px 24px;align-items:center}
   body.present .gwas{grid-template-columns:minmax(0,1fr)}
   .gwas .gctl{display:grid;gap:8px;align-content:center}
