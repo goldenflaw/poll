@@ -219,6 +219,50 @@ window.FIREBASE_CONFIG = {
   .snp-formula{margin:0;font-size:1.2rem;color:var(--ink);line-height:1.5;font-variant-numeric:tabular-nums}
   .snp-formula > span{display:block;white-space:nowrap}
 
+  /* class eQTL scan: one gene per phone, then the class's p-values on screen */
+  .gene-plot{width:100%;height:auto;display:block;margin:4px 0 6px}
+  .gene-plot .gax line{stroke:var(--line)}
+  .gene-plot .gax text{font-size:11px;fill:var(--muted)}
+  .gene-plot .gax .gname{font-size:15px;font-weight:700;fill:var(--ink)}
+  .gene-plot .gax .glbl{font-size:12px;fill:var(--ink);font-weight:600}
+  .gene-plot .gdot{fill:var(--accent);fill-opacity:.5}
+  .gene-plot .gbox{fill:none;stroke:var(--ink);stroke-width:1.5}
+  .gene-plot .gmed{stroke:var(--ink);stroke-width:3}
+  .scan-p{margin:6px 0 0;font-size:1.05rem}
+  .scan-p b{color:var(--accent);font-variant-numeric:tabular-nums}
+  .scan-p sup,.scan-t sup{line-height:0}
+  .scan-truth{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#efeff2;color:var(--ink);font-size:.95rem}
+  .scan-truth.real{background:var(--accent-soft)}
+  body.present .scan .snp-main{grid-template-columns:minmax(0,max(700px,calc(54vh * 900 / 520))) 500px}
+  .scan .snp-side{align-self:start}          /* the buttons stay put when the view changes */
+  .scan .hax text{font-size:18px;fill:var(--muted)}
+  .scan .hax line{stroke:var(--line)}
+  .scan .hax .lbl{font-size:20px;fill:var(--ink);font-weight:600}
+  .scan .hyes,.scan .hreal{fill:var(--accent)}
+  .scan .hno,.scan .hnull{fill:#c4c4cc}
+  .scan .hall{fill:var(--steel)}
+  .scan .hcut{stroke:var(--ink);stroke-width:2;stroke-dasharray:6 5}
+  .scan .hcutlbl{font-size:17px;fill:var(--ink);font-weight:600}
+  .hkey{display:flex;gap:22px;font-size:1.1rem;color:var(--ink)}
+  .hkey span{display:flex;align-items:center;gap:8px}
+  .hkey i{display:inline-block;width:16px;height:16px;border-radius:3px}
+  .hkey i.hyes{background:var(--accent)}
+  .hkey i.hno{background:#c4c4cc}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .scan .snp-box button{font-size:1rem;padding:8px 13px;justify-self:start}
+  .scan .snp-box button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .snp-box h4 small{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);font-size:.85rem;margin-left:6px}
+  table.scan-t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;table-layout:fixed;font-size:1.05rem}
+  table.scan-t col.sth{width:42%}
+  table.scan-t th{text-align:left;font-weight:700;color:var(--ink);padding:6px 8px 6px 0;line-height:1.2}
+  table.scan-t th small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:2px}
+  table.scan-t td{text-align:right;padding:6px 0 6px 6px;white-space:nowrap}
+  table.scan-t tr + tr{border-top:1px solid var(--line)}
+  table.scan-t tr.hd td{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  table.scan-t td b{font-size:1.3rem}
+  table.scan-t .q{color:var(--muted)}
+  .scan-note{margin:0;font-size:1.05rem;color:var(--ink);line-height:1.45}
+
   /* image steps */
   .fig{margin:0}
   .fig img{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:6px;background:#fff}
@@ -635,9 +679,9 @@ function parseDeck(text, existing){
     }
     if (disc && /^[-*•]\s*/.test(line)) { disc.points.push(line.replace(/^[-*•]\s*/, "").slice(0, 300)); return; }
     disc = null;
-    if ((m = line.match(/^SNP\s*[:.)]\s*(.*)$/i))) {
+    if ((m = line.match(/^(SNP|EQTL|SCAN)\s*[:.)]\s*(.*)$/i))) {
       finishQ(); finishSlide();
-      items.push({ kind: "snp", title: m[1].trim().slice(0, 299), line: n });
+      items.push({ kind: m[1].toLowerCase(), title: m[2].trim().slice(0, 299), line: n });
       return;
     }
     if ((m = line.match(/^IMG\s*[:.)]\s*(\S+)(?:\s+(.+))?$/i))) {
@@ -661,14 +705,14 @@ function parseDeck(text, existing){
       if (q) q.options.push(m[1].trim());
       else errors.push(`Line ${n}: an option with no question above it.`);
     } else {
-      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:”, options with “-” and slides with “#”.`);
+      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the class eQTL scan with “SCAN:”, options with “-” and slides with “#”.`);
     }
   });
   finishQ(); finishSlide();
   const newCount = fresh.filter(x => !x.reuse).length;
-  return { items, errors, newCount, slideCount: items.filter(x => x.kind === "s").length,
-           revisits: fresh.length - newCount, discussions: items.filter(x => x.kind === "d").length,
-           images: items.filter(x => x.kind === "i").length, snps: items.filter(x => x.kind === "snp").length };
+  const count = k => items.filter(x => x.kind === k).length;
+  return { items, errors, newCount, slideCount: count("s"), revisits: fresh.length - newCount,
+           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), scans: count("scan") };
 }
 
 /* ---------- activity: height polygenic score ---------- */
@@ -980,10 +1024,13 @@ function gwasPaint(root, g, r2, n){
   }
 }
 
-// One SNP, as a reminder: regress height on the number of copies of an allele (0, 1 or 2).
-// The R² of that regression is the share of the variation in height the SNP explains, its
-// h²SNP:   R² = 2pq·β² / Var(height),   Var(height) = 2pq·β² + everything else.
-const SNP_TITLE = "One SNP: the R² of the regression is its heritability";
+// One SNP: regress a trait on the number of copies of an allele (0, 1 or 2). The R² of that
+// regression is the share of the trait's variation the SNP explains, its h²SNP:
+//   R² = 2pq·β² / Var(trait),   Var(trait) = 2pq·β² + everything else.
+// Two versions run on the same code, each with its own numbers and words (SNP_KINDS): height
+// (SNP:, the reminder from the GWAS lecture) and a gene's expression level (EQTL:, an eQTL).
+const SNP_TITLE  = "One SNP: the R² of the regression is its heritability";
+const EQTL_TITLE = "An eQTL: a GWAS in which the trait is a gene's expression level";
 // 400 made-up people on screen. Each keeps a place in line (who carries the allele first as p
 // grows), a sideways jitter, and their own deviation; the deviations are re-centred within
 // each genotype and scaled to a fixed spread, so Σ residual² never changes.
@@ -992,21 +1039,49 @@ const SNP_TITLE = "One SNP: the R² of the regression is its heritability";
 // are multiples of 0.05, 400 people split into those proportions exactly, so the dots give the
 // same numbers. Rarer alleles can't be split exactly among 400 (1 in 1,000 means 0.8 carriers),
 // so the dots show the nearest whole number of carriers: one person at 1 in 1,000.
-const SNP_N = 400, SNP_SD = 7, SNP_MU = 170, SNP_BMAX = 10;
-const SNP_PS = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5];
+const SNP_N = 400;
+const SNP_KINDS = {
+  snp: {
+    key: "snp", kicker: "Reminder", title: SNP_TITLE, seed: 21,
+    mu: 170, sd: 7, bmax: 10, b0: 2, p0: 0.4, tick: 10, vdec: 1,
+    ps: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+    steps: [0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    ns: [SNP_N, 1000, 10000, 100000, 1000000],
+    presets: [[0, "0"], [0.05, "0.05 cm"], [0.5, "0.5 cm · biggest common SNPs"], [2, "2 cm"], [5, "5 cm"], [10, "10 cm"]],
+    trait: "height", Trait: "Height", yLabel: "Height (cm)", xLabel: "Copies of the height-increasing allele",
+    unit: "cm per copy", fit: b => `regression line: slope β = ${fmtB(b)} cm per copy`, compare: () => "",
+  },
+  // Expression on a log₂ scale, so β = 1 means each copy of the allele doubles it. eQTL studies
+  // are hundreds of people, not hundreds of thousands, so the p-values are for 50 to 1,000.
+  eqtl: {
+    key: "eqtl", kicker: "eQTL", title: EQTL_TITLE, seed: 33,
+    mu: 6, sd: 0.5, bmax: 2, b0: 0.5, p0: 0.3, tick: 1, vdec: 3,
+    ps: [0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+    steps: [0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 1.75, 2],
+    ns: [50, 100, 200, SNP_N, 1000],
+    presets: [[0, "0"], [0.05, "0.05"], [0.2, "0.2"], [0.5, "0.5"], [1, "1 · ×2"], [2, "2 · ×4"]],
+    trait: "expression", Trait: "Expression", yLabel: "Expression (log₂)", xLabel: "Copies of the allele that raises expression",
+    unit: "log₂ per copy",
+    fit: b => b === 0 ? "regression line: slope β = 0, no effect"
+                      : `regression line: slope β = ${fmtB(b)}, so ×${fmtFold(b)} expression per copy`,
+    compare: () => `For comparison, one of the biggest common height SNPs: R² = ${fmtSmall(snpR2(0.4, 0.5, SNP_KINDS.snp))}`,
+  },
+};
 const fmtFreq = p => p >= 0.1 ? p.toFixed(2) : `${p} <small>· 1 in ${Math.round(1 / p).toLocaleString("en-US")}</small>`;
-const SNP_PEOPLE = (() => {
-  let seed = 21; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function snpPeople(K){
+  if (K.people) return K.people;
+  let seed = K.seed; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const gauss = () => Math.sqrt(-2 * Math.log(rnd())) * Math.cos(2 * Math.PI * rnd());
-  return Array.from({ length: SNP_N }, () => ({ z: gauss(), j: (rnd() - 0.5) * 0.4 }));
-})();
+  return (K.people = Array.from({ length: SNP_N }, () => ({ z: gauss(), j: (rnd() - 0.5) * 0.4 })));
+}
 const snpCache = new Map();
-function snpAt(p){
-  const key = p.toFixed(3);
+function snpAt(p, K){
+  const key = K.key + p.toFixed(3);
   if (snpCache.has(key)) return snpCache.get(key);
+  const people = snpPeople(K);
   const q = 1 - p, n2 = Math.round(p * p * SNP_N), n1 = Math.round(2 * p * q * SNP_N);
-  const g = SNP_PEOPLE.map((_, i) => i >= SNP_N - n2 ? 2 : i >= SNP_N - n2 - n1 ? 1 : 0);
-  const e = SNP_PEOPLE.map(x => x.z);
+  const g = people.map((_, i) => i >= SNP_N - n2 ? 2 : i >= SNP_N - n2 - n1 ? 1 : 0);
+  const e = people.map(x => x.z);
   [0, 1, 2].forEach(k => {
     const idx = g.map((v, i) => v === k ? i : -1).filter(i => i >= 0);
     if (!idx.length) return;
@@ -1014,20 +1089,20 @@ function snpAt(p){
     idx.forEach(i => (e[i] -= m));
   });
   const sd = Math.sqrt(e.reduce((t, v) => t + v * v, 0) / SNP_N);
-  e.forEach((v, i) => (e[i] = v * SNP_SD / sd));
+  e.forEach((v, i) => (e[i] = v * K.sd / sd));
   const mg = g.reduce((t, v) => t + v, 0) / SNP_N, vg = g.reduce((t, v) => t + (v - mg) ** 2, 0) / SNP_N;
   const d = { p, g, e, mg, vg };
   snpCache.set(key, d);
   return d;
 }
-const snpY = (d, i, beta) => SNP_MU + beta * (d.g[i] - d.mg) + d.e[i];
-// The effect-size knob is on a log scale, 0.01 to 10 cm per copy, with 0 at the far left, so
-// the tiny effects of real height SNPs are reachable. ↑ ↓ step through round values.
+const snpY = (d, i, beta, K) => K.mu + beta * (d.g[i] - d.mg) + d.e[i];
+// The effect-size knob is on a log scale, 0.01 up to the biggest effect, with 0 at the far left,
+// so the tiny effects of real height SNPs are reachable. ↑ ↓ step through round values.
 const SNP_BLO = -2, SNP_BPOS = 1000;
-const betaAt = pos => pos <= 0 ? 0 : 10 ** (SNP_BLO + (Math.log10(SNP_BMAX) - SNP_BLO) * pos / SNP_BPOS);
-const posAt = b => b <= 0 ? 0 : Math.max(1, Math.min(SNP_BPOS, Math.round((Math.log10(b) - SNP_BLO) / (Math.log10(SNP_BMAX) - SNP_BLO) * SNP_BPOS)));
-const SNP_STEPS = [0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const betaAt = (pos, K) => pos <= 0 ? 0 : 10 ** (SNP_BLO + (Math.log10(K.bmax) - SNP_BLO) * pos / SNP_BPOS);
+const posAt = (b, K) => b <= 0 ? 0 : Math.max(1, Math.min(SNP_BPOS, Math.round((Math.log10(b) - SNP_BLO) / (Math.log10(K.bmax) - SNP_BLO) * SNP_BPOS)));
 const fmtB = b => b === 0 ? "0" : b >= 1 ? b.toFixed(1) : String(Number(b.toPrecision(2)));
+const fmtFold = b => { const f = 2 ** b; return f < 1.1 ? f.toFixed(3) : f.toFixed(2); };
 function fmtSmall(v){             // R² and the like: 0.038, 0.20, or 2.4 × 10⁻⁵ when tiny
   if (v === 0) return "0";
   if (v >= 0.1) return v.toFixed(2);
@@ -1036,11 +1111,11 @@ function fmtSmall(v){             // R² and the like: 0.038, 0.20, or 2.4 × 10
   if (m >= 9.95) { m = 1; e += 1; }
   return `${m.toFixed(1)} × 10<sup>${String(e).replace("-", "−")}</sup>`;
 }
-const snpR2 = (p, beta) => beta * beta * 2 * p * (1 - p) / (beta * beta * 2 * p * (1 - p) + SNP_SD * SNP_SD);
+const snpR2 = (p, beta, K) => beta * beta * 2 * p * (1 - p) / (beta * beta * 2 * p * (1 - p) + K.sd * K.sd);
 // The same effect tested in samples of different sizes: t² = (N − 2)·R² / (1 − R²), and a
 // two-sided p-value. Worked in logs (Numerical Recipes' erfc, relative error under 1.2e-7) so
 // that p-values far smaller than a computer can hold, like 10^-5000, still come out right.
-const SNP_NS = [SNP_N, 1000, 10000, 100000, 1000000], GW_LOG10 = Math.log10(5e-8);
+const GW_LOG10 = Math.log10(5e-8);
 function log10P(z){
   const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.5 * x);
   const ln = Math.log(t) - x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
@@ -1055,30 +1130,30 @@ function fmtP(l){
   return `${m.toFixed(1)} × 10<sup>${e.toLocaleString("en-US").replace("-", "−")}</sup>`;
 }
 
-function snpHTML(title){
-  const W = 900, H = 520, L = 78, R = 24, T = 16, B = 78;
-  // One fixed height axis for every setting of both knobs.
+function snpHTML(title, K){
+  const W = 900, H = 520, L = 78, R = 24, T = 16, B = 78, pad = K.tick / 5;
+  // One fixed axis for every setting of both knobs.
   const ys = [];
-  SNP_PS.forEach(p => { const d = snpAt(p); [0, SNP_BMAX].forEach(b => d.g.forEach((_, i) => ys.push(snpY(d, i, b)))); });
-  const lo = Math.floor((Math.min(...ys) - 2) / 10) * 10, hi = Math.ceil((Math.max(...ys) + 2) / 10) * 10;
+  K.ps.forEach(p => { const d = snpAt(p, K); [0, K.bmax].forEach(b => d.g.forEach((_, i) => ys.push(snpY(d, i, b, K)))); });
+  const lo = Math.floor((Math.min(...ys) - pad) / K.tick) * K.tick, hi = Math.ceil((Math.max(...ys) + pad) / K.tick) * K.tick;
   const gx = g => L + (g + 0.6) / 3.2 * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
-  const ticks = []; for (let v = lo; v <= hi; v += 10) ticks.push(v);
+  const ticks = []; for (let v = lo; v <= hi + 1e-9; v += K.tick) ticks.push(v);
   return { geom: { gx, py, lo, hi }, html: `
     <div class="snp-slide">
-    <div class="stitle">Reminder</div>
-    <div class="qtext" style="margin-bottom:8px">${esc(title || SNP_TITLE)}</div>
-    <div class="snp" id="snp">
+    <div class="stitle">${esc(K.kicker)}</div>
+    <div class="qtext" style="margin-bottom:8px">${esc(title || K.title)}</div>
+    <div class="snp" id="snp" data-kind="${K.key}">
       <div class="snp-main">
         <div class="snp-left">
-        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Height of ${SNP_N} people against how many copies of the allele they carry, with the regression line">
+        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${K.Trait} of ${SNP_N} people against how many copies of the allele they carry, with the regression line">
           <g class="sax">
             ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v)}" y2="${py(v)}"/><text x="${L - 12}" y="${py(v) + 6}" text-anchor="end">${v}</text>`).join("")}
             ${[0, 1, 2].map(g => `<text class="gl" x="${gx(g)}" y="${H - B + 34}" text-anchor="middle">${g}</text>`).join("")}
-            <text class="lbl" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">Copies of the height-increasing allele</text>
-            <text class="lbl" transform="translate(20 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Height (cm)</text>
+            <text class="lbl" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">${K.xLabel}</text>
+            <text class="lbl" transform="translate(20 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">${K.yLabel}</text>
           </g>
-          <g>${SNP_PEOPLE.map(() => `<line class="sres"/>`).join("")}</g>
-          <g>${SNP_PEOPLE.map(() => `<circle class="sdot" r="4.5"/>`).join("")}</g>
+          <g>${snpPeople(K).map(() => `<line class="sres"/>`).join("")}</g>
+          <g>${snpPeople(K).map(() => `<circle class="sdot" r="4.5"/>`).join("")}</g>
           <line class="sfit"/>
           ${[0, 1, 2].map(g => `<line class="smean" data-g="${g}"/>`).join("")}
           <line class="sfitkey" x1="${L + 14}" x2="${L + 50}" y1="${T + 18}" y2="${T + 18}"/>
@@ -1087,9 +1162,9 @@ function snpHTML(title){
         <div class="snp-box">
         <h4>p-value: the same effect, tested in more people</h4>
         <table class="snp-p">
-          <colgroup><col class="pth"><col span="${SNP_NS.length}"></colgroup>
-          <tr><th>People tested</th>${SNP_NS.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_N ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
-          <tr class="pv"><th>p-value</th>${SNP_NS.map(n => `<td data-n="${n}"></td>`).join("")}</tr>
+          <colgroup><col class="pth"><col span="${K.ns.length}"></colgroup>
+          <tr><th>People tested</th>${K.ns.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_N ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
+          <tr class="pv"><th>p-value</th>${K.ns.map(n => `<td data-n="${n}"></td>`).join("")}</tr>
         </table>
         <p class="snp-pnote">t² = (N − 2)·R² / (1 − R²).
           <span style="color:var(--accent);font-weight:700">In maroon:</span> genome-wide significant, p &lt; 5 × 10<sup>−8</sup>.</p>
@@ -1099,23 +1174,18 @@ function snpHTML(title){
           <div class="snp-box">
           <h4>The SNP</h4>
           <div class="snp-knob"><label for="beta">Effect size β</label><span class="plot-read" id="bread"></span></div>
-          <input type="range" id="beta" min="0" max="${SNP_BPOS}" step="1" value="${posAt(2)}">
+          <input type="range" id="beta" min="0" max="${SNP_BPOS}" step="1" value="${posAt(K.b0, K)}">
           <div class="plot-presets">
-            <button class="small ghost" data-b="0">0</button>
-            <button class="small ghost" data-b="0.05">0.05 cm</button>
-            <button class="small ghost" data-b="0.5">0.5 cm · biggest common SNPs</button>
-            <button class="small ghost" data-b="2">2 cm</button>
-            <button class="small ghost" data-b="5">5 cm</button>
-            <button class="small ghost" data-b="10">10 cm</button>
+            ${K.presets.map(([b, l]) => `<button class="small ghost" data-b="${b}">${l}</button>`).join("\n            ")}
           </div>
           <div class="snp-knob"><label for="maf">Allele frequency p</label><span class="plot-read" id="mread"></span></div>
-          <input type="range" id="maf" min="0" max="${SNP_PS.length - 1}" step="1" value="${SNP_PS.indexOf(0.4)}">
+          <input type="range" id="maf" min="0" max="${K.ps.length - 1}" step="1" value="${K.ps.indexOf(K.p0)}">
           </div>
           <div class="snp-box">
           <div class="snp-boxhead"><h4>R² from the residuals</h4><button class="small ghost" id="sresbtn">Show residuals</button></div>
           <div class="snp-ss">
             <div><span>Σ residual² <small>around the line</small></span><b id="ssres"></b></div>
-            <div><span>Σ (height − average)² <small>total</small></span><b id="sstot"></b></div>
+            <div><span>Σ (${K.trait} − average)² <small>total</small></span><b id="sstot"></b></div>
           </div>
           <div class="snp-r2"><span class="lbl" id="sq"></span><b id="sr2"></b></div>
           <div class="snp-bar"><i id="sbar"></i></div>
@@ -1131,10 +1201,10 @@ function snpHTML(title){
     </div>` };
 }
 
-function snpPaint(root, g, beta, p){
-  const d = snpAt(p), ys = d.g.map((_, i) => snpY(d, i, beta));
-  const mean = gg => SNP_MU + beta * (gg - d.mg);
-  const xs = d.g.map((gg, i) => g.gx(gg + SNP_PEOPLE[i].j).toFixed(1));
+function snpPaint(root, g, beta, p, K){
+  const d = snpAt(p, K), ys = d.g.map((_, i) => snpY(d, i, beta, K)), people = snpPeople(K);
+  const mean = gg => K.mu + beta * (gg - d.mg);
+  const xs = d.g.map((gg, i) => g.gx(gg + people[i].j).toFixed(1));
   // Rare genotypes (four people or fewer) get bigger, solid dots so a lone carrier stands out.
   const cnt = [0, 1, 2].map(k => d.g.filter(v => v === k).length);
   root.querySelectorAll(".sdot").forEach((c, i) => {
@@ -1157,12 +1227,12 @@ function snpPaint(root, g, beta, p){
   const fit = root.querySelector(".sfit");
   fit.setAttribute("x1", g.gx(-0.45).toFixed(1)); fit.setAttribute("y1", g.py(mean(-0.45)).toFixed(1));
   fit.setAttribute("x2", g.gx(2.45).toFixed(1)); fit.setAttribute("y2", g.py(mean(2.45)).toFixed(1));
-  root.querySelector(".sfitlbl").textContent = `regression line: slope β = ${fmtB(beta)} cm per copy`;
-  const r2 = snpR2(p, beta), v = beta * beta * 2 * p * (1 - p) + SNP_SD * SNP_SD;
+  root.querySelector(".sfitlbl").textContent = K.fit(beta);
+  const r2 = snpR2(p, beta, K), v = beta * beta * 2 * p * (1 - p) + K.sd * K.sd;
   const f = fmtSmall(r2);
   // Sums of squares for 400 people at this exact frequency: around the line, and around the
   // average (the same as summing over the dots, whenever 400 people split exactly).
-  const ssRes = SNP_N * SNP_SD * SNP_SD, ssTot = SNP_N * v;
+  const ssRes = SNP_N * K.sd * K.sd, ssTot = SNP_N * v;
   // As many decimals as it takes to see the two sums differ (none once they differ by 1 or more).
   const gap = ssTot - ssRes, dec = gap <= 0 ? 0 : Math.max(0, Math.min(4, Math.ceil(-Math.log10(gap)) + 1));
   const n0 = x => x.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
@@ -1174,17 +1244,302 @@ function snpPaint(root, g, beta, p){
     td.innerHTML = fmtP(l);
     td.classList.toggle("sig", l < GW_LOG10);
   });
-  root.querySelector("#bread").innerHTML = `${fmtB(beta)} <small>cm per copy</small>`;
-  root.querySelector("#beta").value = posAt(beta);
+  root.querySelector("#bread").innerHTML = `${fmtB(beta)} <small>${K.unit}</small>`;
+  root.querySelector("#beta").value = posAt(beta, K);
   root.querySelector("#mread").innerHTML = fmtFreq(p);
-  root.querySelector("#maf").value = SNP_PS.indexOf(p);
+  root.querySelector("#maf").value = K.ps.indexOf(p);
   root.querySelector("#sr2").innerHTML = f;
   root.querySelector("#sbar").style.width = (r2 * 100).toFixed(2) + "%";
-  root.querySelector("#sform").innerHTML = `<span><b>R² = h²<sub>SNP</sub> = 2pq·β² / Var(height)</b></span>
-    <span>= 2 × ${p >= 0.1 ? p.toFixed(2) : p} × ${p >= 0.1 ? (1 - p).toFixed(2) : String(Number((1 - p).toFixed(3)))} × ${fmtB(beta)}² / ${v.toFixed(dec ? 4 : 1)} = ${f}</span>
-    <span class="muted">Var(height) = Σ (height − average)² / ${SNP_N}</span>`;
+  const cmp = K.compare();
+  root.querySelector("#sform").innerHTML = `<span><b>R² = h²<sub>SNP</sub> = 2pq·β² / Var(${K.trait})</b></span>
+    <span>= 2 × ${p >= 0.1 ? p.toFixed(2) : p} × ${p >= 0.1 ? (1 - p).toFixed(2) : String(Number((1 - p).toFixed(3)))} × ${fmtB(beta)}² / ${v.toFixed(dec ? K.vdec + 3 : K.vdec)} = ${f}</span>
+    <span class="muted">Var(${K.trait}) = Σ (${K.trait} − average)² / ${SNP_N}</span>${cmp ? `
+    <span class="muted">${cmp}</span>` : ""}`;
   root.querySelectorAll(".plot-presets [data-b]").forEach(b => b.classList.toggle("on",
     +b.dataset.b === 0 ? beta === 0 : beta > 0 && Math.abs(Math.log10(+b.dataset.b / beta)) < 0.01));
+}
+
+/* ---------- activity: a class eQTL scan ---------- */
+// Each phone is one gene: its expression in 100 people, split by their genotype at one SNP near
+// the gene. Students vote by eye: is that SNP an eQTL? The projector then shows the class's
+// p-values, how many eGenes each significance threshold calls, and (T) which genes really had an
+// eQTL; G switches to all 20,000 genes of the made-up genome. One SNP per gene keeps it simple
+// (real studies test thousands of SNPs near each gene).
+// Everything is simulated from the step's id, and a phone's gene comes from the student's
+// sign-in id, so phones and the projector agree without storing anything new.
+const SCAN_TITLE = "Each phone is one gene: is its SNP an eQTL?";
+const SCAN_Q = "Is this SNP an eQTL for your gene?";
+const SCAN_OPTS = ["Yes, an eQTL", "No, just noise"];
+const SCAN_G = 20000, SCAN_N = 100, SCAN_REAL = 0.3, SCAN_BINS = 20;
+function hash32(s){
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+function rng32(seed){           // mulberry32
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), a | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Two-sided p-value of a t statistic: I_{df/(df+t²)}(df/2, 1/2), the regularized incomplete
+// beta function (Numerical Recipes' continued fraction, Lanczos log-gamma).
+function lnGamma(x){
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lnGamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + 7.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function betacf(a, b, x){
+  const TINY = 1e-300;
+  const qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < TINY) d = TINY;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= 300; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
+    c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
+    c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < 3e-16) break;
+  }
+  return h;
+}
+function ibeta(a, b, x){
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+}
+const tPval = (t, df) => Math.min(1, Math.max(0, ibeta(df / 2, 0.5, df / (df + t * t))));
+// Regress expression on genotype: the slope's two-sided p-value, with N − 2 degrees of freedom.
+function regP(g, y){
+  const n = g.length, mg = g.reduce((s, v) => s + v, 0) / n, my = y.reduce((s, v) => s + v, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) { sxy += (g[i] - mg) * (y[i] - my); sxx += (g[i] - mg) ** 2; syy += (y[i] - my) ** 2; }
+  if (!sxx || !syy) return 1;
+  const r2 = Math.min(1 - 1e-15, sxy * sxy / (sxx * syy));
+  return tPval(Math.sqrt((n - 2) * r2 / (1 - r2)), n - 2);
+}
+// One gene: an allele frequency, whether its SNP is a real eQTL (3 genes in 10), and if so an
+// effect β in units of the person-to-person spread (typically 0.5, from about 0.15 to 1.6),
+// raising or lowering expression; then 100 people's genotypes and expression levels.
+const SCAN_BASES = ["A", "C", "G", "T"];
+function scanGene(salt, j){
+  const rnd = rng32(hash32(salt + ":" + j));
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const p = 0.05 + 0.45 * rnd();
+  const real = rnd() < SCAN_REAL;
+  const beta = real ? (rnd() < 0.5 ? -1 : 1) * Math.min(2, 0.5 * Math.exp(0.6 * gauss())) : 0;
+  const a = Math.floor(rnd() * 4), b = (a + 1 + Math.floor(rnd() * 3)) % 4;
+  const g = new Array(SCAN_N), y = new Array(SCAN_N);
+  for (let i = 0; i < SCAN_N; i++) g[i] = (rnd() < p ? 1 : 0) + (rnd() < p ? 1 : 0);
+  if (g.every(v => v === g[0])) g[0] = g[0] ? g[0] - 1 : 1;       // a SNP nobody varies at can't be tested
+  for (let i = 0; i < SCAN_N; i++) y[i] = beta * g[i] + gauss();
+  const r2 = beta * beta * 2 * p * (1 - p) / (beta * beta * 2 * p * (1 - p) + 1);
+  return { j, p, real, beta, r2, alleles: [SCAN_BASES[a], SCAN_BASES[b]], g, y, pval: regP(g, y) };
+}
+const scanIndex = (salt, uid) => hash32(salt + "|" + uid) % SCAN_G;
+const scanName = j => `Gene ${j + 1}`;
+// All 20,000 genes, made only when the projector first asks for them.
+const scanGenomes = new Map();
+function scanGenome(salt){
+  if (scanGenomes.has(salt)) return scanGenomes.get(salt);
+  const pv = new Float64Array(SCAN_G), real = new Uint8Array(SCAN_G);
+  for (let j = 0; j < SCAN_G; j++) { const x = scanGene(salt, j); pv[j] = x.pval; real[j] = x.real ? 1 : 0; }
+  const out = { pv, real };
+  scanGenomes.set(salt, out);
+  return out;
+}
+// Three ways to call eGenes from m p-values: p < 0.05, Bonferroni (p < 0.05 / m), and a 5% false
+// discovery rate (Benjamini–Hochberg: the largest k with the k-th smallest p ≤ 0.05·k/m).
+function scanRules(pv){
+  const m = pv.length, sorted = Array.from(pv).sort((a, b) => a - b);
+  let k = 0;
+  for (let i = m; i >= 1; i--) if (sorted[i - 1] <= 0.05 * i / m) { k = i; break; }
+  return [
+    { id: "p05",  name: "p &lt; 0.05", note: "each gene on its own", hit: p => p < 0.05 },
+    { id: "bonf", name: "Bonferroni", note: `p &lt; 0.05 / ${m.toLocaleString("en-US")} = ${fmtP(Math.log10(0.05 / m))}`, hit: p => p < 0.05 / m },
+    { id: "fdr",  name: "FDR 5%", note: k ? `Benjamini–Hochberg: p ≤ ${fmtP(Math.log10(sorted[k - 1]))}` : "Benjamini–Hochberg: none pass",
+      hit: p => k > 0 && p <= sorted[k - 1] },
+  ];
+}
+const fmtCount = n => n.toLocaleString("en-US");
+
+// One gene on a phone: expression (scaled to mean 0, spread 1) by genotype, dots and boxes.
+function scanPlotSVG(gene){
+  const W = 360, H = 260, L = 36, R = 6, T = 10, B = 46;
+  const n = gene.y.length, my = gene.y.reduce((s, v) => s + v, 0) / n;
+  const sy = Math.sqrt(gene.y.reduce((s, v) => s + (v - my) ** 2, 0) / n) || 1;
+  const z = gene.y.map(v => (v - my) / sy);
+  const lo = Math.min(-3, Math.floor(Math.min(...z))), hi = Math.max(3, Math.ceil(Math.max(...z)));
+  const gx = k => L + (k + 0.5) / 3 * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const [a, b] = gene.alleles, names = [a + a, a + b, b + b];
+  const groups = [0, 1, 2].map(k => z.filter((_, i) => gene.g[i] === k).sort((u, v) => u - v));
+  const q = (s, f) => { const x = (s.length - 1) * f, i = Math.floor(x); return s[i] + ((s[Math.min(i + 1, s.length - 1)] - s[i]) * (x - i)); };
+  const ticks = []; for (let v = lo; v <= hi; v++) ticks.push(v);
+  const boxes = groups.map((s, k) => s.length < 5 ? "" : `
+    <rect class="gbox" x="${(gx(k) - 34).toFixed(1)}" width="68" y="${py(q(s, 0.75)).toFixed(1)}" height="${(py(q(s, 0.25)) - py(q(s, 0.75))).toFixed(1)}" rx="4"/>
+    <line class="gmed" x1="${(gx(k) - 34).toFixed(1)}" x2="${(gx(k) + 34).toFixed(1)}" y1="${py(q(s, 0.5)).toFixed(1)}" y2="${py(q(s, 0.5)).toFixed(1)}"/>`).join("");
+  const dots = z.map((v, i) => {
+    const jit = (((i * 7919) % 101) / 100 - 0.5) * 56;
+    return `<circle class="gdot" r="3.2" cx="${(gx(gene.g[i]) + jit).toFixed(1)}" cy="${py(v).toFixed(1)}"/>`;
+  }).join("");
+  return `<svg class="gene-plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Expression of ${scanName(gene.j)} in ${n} people by genotype">
+    <g class="gax">${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v).toFixed(1)}" y2="${py(v).toFixed(1)}"/><text x="${L - 6}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end">${String(v).replace("-", "−")}</text>`).join("")}
+      ${names.map((nm, k) => `<text class="gname" x="${gx(k).toFixed(1)}" y="${H - B + 20}" text-anchor="middle">${nm}</text><text x="${gx(k).toFixed(1)}" y="${H - B + 38}" text-anchor="middle">${groups[k].length} ${groups[k].length === 1 ? "person" : "people"}</text>`).join("")}
+      <text class="glbl" transform="translate(11 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Expression</text></g>
+    ${boxes}${dots}
+  </svg>`;
+}
+
+function scanStudentHTML(gene, qid, choice, open, reveal, truth, failed){
+  const status = failed ? `<div class="status">That answer didn't go through — voting may have just closed.</div>`
+    : open ? (choice == null ? `<div class="status">Look at your gene, then vote: is the SNP an eQTL?</div>`
+                             : `<div class="status ok">Answer recorded — tap the other one to change it.</div>`)
+    : `<div class="status wait">Voting is closed. Look at the screen.</div>`;
+  const b = gene.alleles[1], r2 = Math.round(gene.r2 * 100);
+  // A real effect that explains under 2% of the variation is hard to see in 100 people; say so.
+  const truthLine = !truth ? "" : gene.real && gene.r2 < 0.02
+    ? `<div class="scan-truth real"><b>A real eQTL, but a weak one.</b> Each copy of ${b} ${gene.beta > 0 ? "raises" : "lowers"} this gene's
+       expression a little: the SNP explains ${r2 < 1 ? "under 1" : r2}% of the variation, too little to see reliably in ${SCAN_N} people.</div>`
+    : gene.real
+    ? `<div class="scan-truth real"><b>A real eQTL.</b> Each copy of ${b} ${gene.beta > 0 ? "raises" : "lowers"} this gene's expression;
+       the SNP explains ${r2}% of the variation in it.</div>`
+    : `<div class="scan-truth"><b>No eQTL.</b> This SNP does nothing to the gene: any pattern you saw is chance.</div>`;
+  return `${status}
+    <div class="stitle">Class eQTL scan</div>
+    <p class="muted" style="margin:0">Your gene is</p>
+    <div class="celeb">${scanName(gene.j)}</div>
+    <p style="margin:0 0 8px">Its expression in ${SCAN_N} people, split by their genotype at a SNP near the gene.</p>
+    ${scanPlotSVG(gene)}
+    ${reveal ? `<p class="scan-p">p-value for your gene: <b>${fmtP(Math.log10(gene.pval))}</b></p>` : ""}
+    ${truthLine}
+    <div class="qtext" style="margin-top:14px">${SCAN_Q}</div>
+    ${SCAN_OPTS.map((o, i) => `
+      <button class="choice" aria-pressed="${choice === i}" onclick="__vote('${qid}', ${i})" ${open ? "" : "disabled"}>
+        <span class="tag">${LETTERS[i]}</span><span>${o}</span>
+      </button>`).join("")}`;
+}
+
+// The projector. While voting: how many genes have been judged. Revealed: a histogram of the
+// p-values (each of the class's genes a square; all 20,000 as bars) and what each threshold calls.
+function scanScreenHTML(o){
+  if (!o.reveal) return `
+    <div class="stitle">Activity</div>
+    <div class="qtext">${esc(o.title)}</div>
+    <p class="prs-how">Your phone shows one gene's expression in ${SCAN_N} people, split by their genotype at a SNP
+      near the gene. Some genes have a real eQTL; the rest don't. Judge by eye: is the SNP an eQTL for your gene?</p>
+    <div class="count"><b>${o.n}</b> gene${o.n === 1 ? "" : "s"} judged</div>`;
+  const all = o.all, genes = o.genes;
+  const m = all ? SCAN_G : genes.length;
+  const pv = all ? o.genome.pv : genes.map(x => x.pval);
+  const isReal = all ? k => o.genome.real[k] === 1 : k => genes[k].real;
+  const rules = scanRules(pv);
+  const rows = [];
+  if (!all) rows.push({ name: "By eye", note: "your votes", hit: k => genes[k].said });
+  rules.forEach(r => rows.push({ name: r.name, note: r.note, hit: k => r.hit(pv[k]) }));
+  const nReal = Array.from(pv, (_, k) => isReal(k)).filter(Boolean).length;
+  const cell = v => o.truth ? fmtCount(v) : `<span class="q">?</span>`;
+  const table = rows.map(r => {
+    let called = 0, real = 0;
+    for (let k = 0; k < m; k++) if (r.hit(k)) { called++; if (isReal(k)) real++; }
+    return `<tr><th>${r.name}<small>${r.note}</small></th><td><b>${fmtCount(called)}</b></td><td>${cell(real)}</td><td>${cell(called - real)}</td><td>${cell(nReal - real)}</td></tr>`;
+  }).join("");
+
+  // the histogram
+  const W = 900, H = 520, L = 78, R = 24, T = 26, B = 78;
+  const px = v => L + v * (W - L - R), bw = (W - L - R) / SCAN_BINS;
+  const binOf = p => Math.min(SCAN_BINS - 1, Math.floor(p * SCAN_BINS));
+  const bins = Array.from({ length: SCAN_BINS }, () => []);
+  for (let k = 0; k < m; k++) bins[binOf(pv[k])].push(k);
+  const colourBy = k => o.truth ? isReal(k) : all ? false : genes[k].said;
+  let marks = "", yticks = "", ylab = all ? "Number of genes" : "Genes";
+  if (all) {
+    const top = Math.max(...bins.map(b => b.length));
+    const step = [100, 200, 250, 500, 1000, 2000, 2500, 5000].find(s => top / s <= 6) || 10000;
+    const ymax = Math.ceil(top / step) * step, py = v => T + (1 - v / ymax) * (H - T - B);
+    for (let v = 0; v <= ymax; v += step) yticks += `<line x1="${L}" x2="${W - R}" y1="${py(v).toFixed(1)}" y2="${py(v).toFixed(1)}"/><text x="${L - 10}" y="${(py(v) + 6).toFixed(1)}" text-anchor="end">${fmtCount(v)}</text>`;
+    bins.forEach((b, i) => {
+      const x = (px(i / SCAN_BINS) + 1.5).toFixed(1), w = (bw - 3).toFixed(1);
+      const nr = o.truth ? b.filter(isReal).length : 0;
+      const y0 = py(0), y1 = py(nr), y2 = py(b.length);
+      if (nr) marks += `<rect class="hreal" x="${x}" width="${w}" y="${y1.toFixed(1)}" height="${(y0 - y1).toFixed(1)}"/>`;
+      if (b.length - nr) marks += `<rect class="${o.truth ? "hnull" : "hall"}" x="${x}" width="${w}" y="${y2.toFixed(1)}" height="${(y1 - y2).toFixed(1)}"/>`;
+    });
+  } else {
+    const top = Math.max(1, ...bins.map(b => b.length));
+    const unit = Math.min(bw - 4, (H - T - B) / top), size = unit - 3;
+    const per = [1, 2, 5, 10, 20].find(s => top / s <= 8) || 50;
+    for (let v = 0; v <= top; v += per) { const y = H - B - v * unit; yticks += `<line x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${L - 10}" y="${(y + 6).toFixed(1)}" text-anchor="end">${v}</text>`; }
+    bins.forEach((b, i) => {
+      // the "yes" squares (or the real eQTLs, once shown) at the bottom of each stack
+      const ord = [...b].sort((u, v) => colourBy(v) - colourBy(u) || pv[u] - pv[v]);
+      ord.forEach((k, s) => {
+        const x = px(i / SCAN_BINS) + (bw - size) / 2, y = H - B - (s + 1) * unit + 1.5;
+        marks += `<rect class="${colourBy(k) ? "hyes" : "hno"}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" rx="3"/>`;
+      });
+    });
+  }
+  const xt = [0, 0.25, 0.5, 0.75, 1].map(v => `<text x="${px(v).toFixed(1)}" y="${H - B + 30}" text-anchor="middle">${v}</text>`).join("");
+  const cut = px(0.05);
+  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Histogram of ${fmtCount(m)} p-values">
+      <g class="hax">${yticks}${xt}
+        <text class="lbl" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">p-value, one per gene</text>
+        <text class="lbl" transform="translate(20 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">${ylab}</text></g>
+      ${marks}
+      <line class="hcut" x1="${cut.toFixed(1)}" x2="${cut.toFixed(1)}" y1="${T - 14}" y2="${H - B}"/>
+      <text class="hcutlbl" x="${(cut + 8).toFixed(1)}" y="${T - 2}">p = 0.05</text>
+    </svg>`;
+  const yes = o.truth ? "real eQTL" : "you said eQTL", no = o.truth ? "no eQTL" : "you said no";
+  const key = all && !o.truth ? "" : `<div class="hkey"><span><i class="hyes"></i>${yes}</span><span><i class="hno"></i>${no}</span></div>`;
+  const chance = Math.round(0.05 * m * 10) / 10;
+  return `
+    <div class="snp-slide scan-slide">
+    <div class="stitle">Class eQTL scan</div>
+    <div class="qtext" style="margin-bottom:8px">${all ? `p-values for all ${fmtCount(SCAN_G)} genes` : `p-values for our ${m} gene${m === 1 ? "" : "s"}`}</div>
+    <div class="snp scan" id="scan">
+      <div class="snp-main">
+        <div class="snp-left">${svg}${key}</div>
+        <div class="snp-side">
+          <div class="snp-box">
+            <div class="seg">
+              <button class="small ghost ${all ? "" : "on"}" data-all="0">Our ${genes.length} gene${genes.length === 1 ? "" : "s"}</button>
+              <button class="small ghost ${all ? "on" : ""}" data-all="1">All ${fmtCount(SCAN_G)} genes</button>
+            </div>
+            <button class="small ghost ${o.truth ? "on" : ""}" id="scantruth">${o.truth ? "Hide which are real" : "Show which are real"}</button>
+          </div>
+          <div class="snp-box">
+            <h4>eGenes called <small>genes with a significant eQTL</small></h4>
+            <table class="scan-t">
+              <colgroup><col class="sth"><col span="4"></colgroup>
+              <tr class="hd"><th></th><td>called</td><td>real</td><td>chance</td><td>missed</td></tr>
+              ${table}
+            </table>
+          </div>
+          <div class="snp-box">
+            <p class="scan-note">If no gene had an eQTL, p &lt; 0.05 would still call 1 gene in 20:
+              about <b>${fmtCount(chance)}</b> of these ${fmtCount(m)}.${o.truth ? ` ${fmtCount(nReal)} of the ${fmtCount(m)} really have one.` : ""}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>`;
 }
 
 function figureHTML(src, title){
@@ -1444,7 +1799,8 @@ async function teacher(room){
   // Activity steps are slide docs with a `step` of "prs" (genotypes on phones) or
   // "plot" (the prediction plot on screen), so arrow keys walk through them like polls.
   const stepOf   = it => it && it.kind === "s" ? it.s.step || null : null;
-  const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot", image: "Image", snp: "One SNP's R²" };
+  const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot", image: "Image", snp: "One SNP's R²",
+                      eqtl: "An eQTL's R²", scan: "Class eQTL scan", discuss: "Discussion" };
   // Sessions saved before slides existed have `current` but no `show`.
   const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
                           : roomData.current ? [roomData.current] : []).filter(id => qById(id));
@@ -1595,7 +1951,8 @@ async function teacher(room){
           <code class="inline">---</code> ends it · <code class="inline">Q:</code> a question ·
           <code class="inline">- </code> an option · a <code class="inline">Q:</code> with no options on a slide
           brings back the earlier question with the same wording · <code class="inline">D:</code> a discussion prompt ·
-          <code class="inline">IMG:</code> a picture · <code class="inline">SNP:</code> the one-SNP regression demo ·
+          <code class="inline">IMG:</code> a picture · <code class="inline">SNP:</code> the one-SNP regression demo
+          (<code class="inline">EQTL:</code> the same for a gene's expression) · <code class="inline">SCAN:</code> the class eQTL scan ·
           <code class="inline">//</code> notes are ignored.</p>
         <label class="check" style="margin-top:8px"><input type="checkbox" id="atstart">
           <span>Add at the start of the lecture <span class="muted">— otherwise everything goes after your current questions</span></span></label>
@@ -1619,7 +1976,9 @@ async function teacher(room){
           (parsed.revisits ? `, ${parsed.revisits} brought back for a revisit` : "") +
           (parsed.discussions ? `, ${parsed.discussions} discussion prompt${parsed.discussions === 1 ? "" : "s"}` : "") +
           (parsed.images ? `, ${parsed.images} image${parsed.images === 1 ? "" : "s"}` : "") +
-          (parsed.snps ? `, ${parsed.snps} one-SNP demo${parsed.snps === 1 ? "" : "s"}.` : ".");
+          (parsed.snps ? `, ${parsed.snps} one-SNP demo${parsed.snps === 1 ? "" : "s"}` : "") +
+          (parsed.eqtls ? `, ${parsed.eqtls} eQTL demo${parsed.eqtls === 1 ? "" : "s"}` : "") +
+          (parsed.scans ? `, ${parsed.scans} class eQTL scan${parsed.scans === 1 ? "" : "s"}` : "") + ".";
     };
     document.getElementById("cancel").onclick = () => closeEditor();
     btn.onclick = async () => {
@@ -1652,8 +2011,15 @@ async function teacher(room){
         writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title, qids: [], order: order++, step: "discuss", points: it.points }]);
         continue;
       }
-      if (it.kind === "snp") {
-        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || SNP_TITLE, qids: [], order: order++, step: "snp" }]);
+      if (it.kind === "snp" || it.kind === "eqtl") {
+        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || SNP_KINDS[it.kind].title, qids: [], order: order++, step: it.kind }]);
+        continue;
+      }
+      if (it.kind === "scan") {
+        // The vote ("eQTL or not?") is an ordinary question that lives on the step.
+        const qid = newQid() + (n++).toString(36);
+        writes.push([qRef(room, qid), { question: SCAN_Q, options: SCAN_OPTS, order: order++, standalone: false }]);
+        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || SCAN_TITLE, qids: [qid], order: order++, step: "scan" }]);
         continue;
       }
       if (it.kind === "i") {
@@ -1694,10 +2060,16 @@ async function teacher(room){
   async function showItem(id){
     if (plotOn) document.getElementById("prsplot").click();
     const stepIt = items().find(x => x.id === id), step = stepOf(stepIt);
-    if (step === "snp") {
+    if (step === "snp" || step === "eqtl") {
       // On screen only (the knob is yours); phones say to look at the screen.
-      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || SNP_TITLE,
+      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || SNP_KINDS[step].title,
                                        open: false, reveal: false, activity: "screen" });
+      return;
+    }
+    if (step === "scan") {
+      // Each phone shows its own gene and votes on the step's question; which genes are real stays hidden.
+      await updateDoc(roomRef(room), { current: id, show: slideQids(stepIt.s), title: titleFor(stepIt),
+                                       open: true, reveal: false, truth: false, activity: "scan" });
       return;
     }
     if (step === "image") {
@@ -1749,6 +2121,12 @@ async function teacher(room){
     if (!confirm("Delete this slide? Its questions and their votes are kept.")) return;
     const s = slides.find(x => x.id === sid);
     await deleteDoc(sRef(room, sid));
+    // The class eQTL scan's question belongs to it alone, so it goes too.
+    if (s && s.step === "scan") {
+      for (const qid of s.qids || []) { await wipeVotes(qid); await deleteDoc(qRef(room, qid)); }
+      if (roomData.current === sid) await hideAll();
+      return;
+    }
     // A slide-only question that was on no other slide goes back to the main
     // list, so nothing ends up unreachable.
     for (const qid of (s && s.qids) || []) {
@@ -1787,9 +2165,10 @@ async function teacher(room){
   }
   // Space moves a poll along, one press at a time: close voting → reveal the results →
   // open voting again (results hide). Closing a re-polled round reveals straight away.
-  // Activity steps have no voting, so Space leaves them alone.
+  // Activity steps have no voting, so Space leaves them alone; the class eQTL scan has a vote.
   async function spaceKey(){
-    if (!roomData.current || stepOf(items().find(x => x.id === roomData.current))) return;
+    const st = roomData.current && stepOf(items().find(x => x.id === roomData.current));
+    if (!roomData.current || (st && st !== "scan")) return;
     if (roomData.open) return toggleOpen();
     if (!roomData.reveal) return toggleReveal();
     return toggleOpen();
@@ -2005,20 +2384,21 @@ async function teacher(room){
     fitPresent();
   }
 
-  // The one-SNP demo. The knobs are yours, on screen only: drag them, click a preset, or
-  // press ↑ ↓ to change the effect by 0.5 cm and shift ↑ ↓ the allele frequency by 0.05.
-  function drawSnp(box, cur){
-    const sg = JSON.stringify(["snp", cur.id, cur.s.title]);
+  // The one-SNP demo (height or expression). The knobs are yours, on screen only: drag them,
+  // click a preset, or press ↑ ↓ to step the effect through round values and shift ↑ ↓ the
+  // allele frequency.
+  function drawSnp(box, cur, K){
+    const sg = JSON.stringify([K.key, cur.id, cur.s.title]);
     if (sg === shape) return;
     shape = sg;
     app.classList.add("wide");
-    const { html, geom } = snpHTML(cur.s.title);
+    const { html, geom } = snpHTML(cur.s.title, K);
     cancelAnimationFrame(box.__snpRaf || 0);
     box.innerHTML = html;
-    let beta = 2, p = 0.4;
-    const slider = box.querySelector("#beta"), paint = () => snpPaint(box, geom, beta, p);
+    let beta = K.b0, p = K.p0;
+    const slider = box.querySelector("#beta"), paint = () => snpPaint(box, geom, beta, p, K);
     const maf = box.querySelector("#maf");
-    const setP = k => { p = SNP_PS[Math.min(SNP_PS.length - 1, Math.max(0, k))]; paint(); };
+    const setP = k => { p = K.ps[Math.min(K.ps.length - 1, Math.max(0, k))]; paint(); };
     maf.oninput = () => setP(+maf.value);
     maf.onchange = () => maf.blur();
     const glide = to => {
@@ -2034,7 +2414,7 @@ async function teacher(room){
       };
       box.__snpRaf = requestAnimationFrame(frame);
     };
-    slider.oninput = () => { cancelAnimationFrame(box.__snpRaf || 0); beta = betaAt(+slider.value); paint(); };
+    slider.oninput = () => { cancelAnimationFrame(box.__snpRaf || 0); beta = betaAt(+slider.value, K); paint(); };
     slider.onchange = () => slider.blur();
     box.querySelectorAll(".plot-presets [data-b]").forEach(b => b.onclick = () => glide(+b.dataset.b));
     box.querySelector("#sresbtn").onclick = e => {
@@ -2043,12 +2423,36 @@ async function teacher(room){
     };
     box.__nudge = step => {
       cancelAnimationFrame(box.__snpRaf || 0);
-      beta = step > 0 ? (SNP_STEPS.find(v => v > beta + 1e-9) ?? SNP_BMAX)
-                      : ([...SNP_STEPS].reverse().find(v => v < beta - 1e-9) ?? 0);
+      beta = step > 0 ? (K.steps.find(v => v > beta + 1e-9) ?? K.bmax)
+                      : ([...K.steps].reverse().find(v => v < beta - 1e-9) ?? 0);
       paint();
     };
-    box.__nudgeN = dir => setP(SNP_PS.indexOf(p) + dir);
+    box.__nudgeN = dir => setP(K.ps.indexOf(p) + dir);
     paint();
+    fitPresent();
+  }
+
+  // The class eQTL scan on screen. Which genes are the class's comes from the votes (each vote
+  // is stored under the student's sign-in id, which picks their gene). The view of all 20,000
+  // genes is yours, on screen only; which genes are real (T) goes to phones too.
+  let scanAll = false;
+  const scanTruth = () => updateDoc(roomRef(room), { truth: !roomData.truth });
+  const scanGenomeToggle = () => { scanAll = !scanAll; drawResults(); };
+  function drawScan(box, cur){
+    const qid = slideQids(cur.s)[0], vs = (qid && votes[qid]) || [];
+    const reveal = !roomData.open && !!roomData.reveal, truth = !!roomData.truth;
+    const sg = JSON.stringify(["scan", cur.id, cur.s.title, reveal, truth, scanAll,
+                               reveal ? vs.map(v => [v.uid, v.choice]) : vs.length]);
+    if (sg === shape) return;
+    shape = sg;
+    app.classList.add("wide");
+    const genes = reveal ? vs.filter(v => v.uid && Number.isInteger(v.choice))
+      .map(v => ({ ...scanGene(cur.id, scanIndex(cur.id, v.uid)), said: v.choice === 0 })) : [];
+    box.innerHTML = scanScreenHTML({ title: cur.s.title || SCAN_TITLE, reveal, truth, n: vs.length,
+                                     all: reveal && scanAll, genes, genome: reveal && scanAll ? scanGenome(cur.id) : null });
+    box.querySelectorAll(".seg [data-all]").forEach(b => b.onclick = () => { if (scanAll !== (b.dataset.all === "1")) scanGenomeToggle(); });
+    const tb = box.querySelector("#scantruth");
+    if (tb) tb.onclick = scanTruth;
     fitPresent();
   }
 
@@ -2119,6 +2523,9 @@ async function teacher(room){
     else if (e.key === " ") { e.preventDefault(); spaceKey(); }
     else if (e.key === "r" || e.key === "R") toggleReveal();
     else if (e.key === "p" || e.key === "P") repoll();
+    else if ((e.key === "t" || e.key === "T" || e.key === "g" || e.key === "G") && document.querySelector("#results #scan")) {
+      if (e.key.toLowerCase() === "t") scanTruth(); else scanGenomeToggle();
+    }
     else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot, #results #snp")) {
       e.preventDefault();
       const box = document.getElementById("results"), up = e.key === "ArrowUp";
@@ -2174,7 +2581,7 @@ async function teacher(room){
       if (voteUnsubs.has(id)) continue;
       votes[id] = [];
       voteUnsubs.set(id, onSnapshot(votesRef(room, id), s => {
-        votes[id] = s.docs.map(d => d.data());
+        votes[id] = s.docs.map(d => ({ ...d.data(), uid: d.id }));
         drawLive(); drawResults();
       }));
     }
@@ -2236,12 +2643,25 @@ async function teacher(room){
           ${moves}
         </span>
       </div>`;
-      if (stepOf(it) === "snp") return `
+      if (stepOf(it) === "snp" || stepOf(it) === "eqtl") return `
       <div class="qitem slide ${live ? "live" : ""}">
         <span class="n">${i + 1}</span>
         <span class="body">
-          <span class="t">${esc(it.s.title || SNP_TITLE)}</span>
-          <span class="m">Height against one SNP's genotype, with an effect-size knob${live ? " · showing now" : ""}</span>
+          <span class="t">${esc(it.s.title || SNP_KINDS[stepOf(it)].title)}</span>
+          <span class="m">${stepOf(it) === "snp" ? "Height" : "A gene's expression"} against one SNP's genotype, with an effect-size knob${live ? " · showing now" : ""}</span>
+        </span>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
+          ${moves}
+        </span>
+      </div>`;
+      if (stepOf(it) === "scan") return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <span class="body">
+          <span class="t">${esc(it.s.title || SCAN_TITLE)}</span>
+          <span class="m">Class eQTL scan · each phone judges one gene, then p-values and thresholds on screen${live ? " · showing now" : ""}</span>
         </span>
         <span class="acts">
           ${show}
@@ -2341,8 +2761,9 @@ async function teacher(room){
     // A slide that brings back questions asked earlier is the second time around:
     // nudge toward Re-poll until it's been pressed.
     const revisit = i >= 0 && isRevisit(list, i) && !ids.every(id => qById(id).earlier);
-    const appear = appearances(), once = ids.filter(id => askedOnce(appear, id)).length;
-    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, revisit, i, list.length, ids.length, once]);
+    const appear = appearances(), once = stepOf(it) ? 0 : ids.filter(id => askedOnce(appear, id)).length;
+    const scan = stepOf(it) === "scan";
+    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, !!roomData.truth, revisit, i, list.length, ids.length, once]);
 
     // Only the response count moves as votes land — update it in place so
     // the controls underneath the instructor's cursor stay put.
@@ -2384,6 +2805,10 @@ async function teacher(room){
         ? (ids.length === 1 ? "This question doesn't come back later" : "None of these questions come back later")
         : `${once} of these questions ${once === 1 ? "doesn't" : "don't"} come back later`}: go through ${once === 1 ? "it" : "them"} now
         (<kbd>space</kbd> closes voting, <kbd>space</kbd> again reveals).</p>` : ""}
+      ${scan ? `<p class="warn" style="margin:12px 0 0">Class eQTL scan: each phone shows one gene; students vote eQTL or not.
+        <kbd>space</kbd> closes voting, <kbd>space</kbd> again shows the p-values. Then <kbd>T</kbd> shows which genes are
+        really eQTLs (${roomData.truth ? "showing now, on phones too" : "on phones too"}), and <kbd>G</kbd> switches between the class's genes and all
+        ${fmtCount(SCAN_G)}.</p>` : ""}
       ${revisit ? `<p class="warn" style="margin:12px 0 0">These questions were asked earlier. Press <b>Re-poll</b> (or <kbd>P</kbd>)
         to start the second round; closing voting afterwards shows before and after together.</p>` : ""}
       <p class="muted" style="margin:12px 0 0">
@@ -2474,7 +2899,8 @@ async function teacher(room){
     const box = document.getElementById("results");
     const cur = items().find(x => x.id === roomData.current);
     if ((plotOn || stepOf(cur) === "plot") && PRS) return drawPlot(box);
-    if (stepOf(cur) === "snp") return drawSnp(box, cur);
+    if (stepOf(cur) === "snp" || stepOf(cur) === "eqtl") return drawSnp(box, cur, SNP_KINDS[stepOf(cur)]);
+    if (stepOf(cur) === "scan") return drawScan(box, cur);
     if (stepOf(cur) === "image") {
       const sig = JSON.stringify(["image", cur.id, cur.s.src]);
       if (sig !== shape) {
@@ -2726,6 +3152,18 @@ async function student(room){
       if (next === sig) return;
       sig = next;
       el.innerHTML = `<div class="status wait">Talk it over with the people around you.</div>` + discussHTML(roomData.title, roomData.points);
+      return;
+    }
+    if (roomData.activity === "scan") {
+      // This student's gene comes from their sign-in id, so it's the same after a reload.
+      const qid = showIds()[0];
+      if (!qid || !(qid in mine)) return;          // keep the current screen until the vote snapshot lands
+      const open = !!roomData.open, reveal = !open && !!roomData.reveal, truth = !!roomData.truth;
+      const next = JSON.stringify(["scan", roomData.current, qid, open, reveal, truth, mine[qid] ?? null, failed]);
+      if (next === sig) return;
+      sig = next;
+      const gene = scanGene(roomData.current, scanIndex(roomData.current, uid));
+      el.innerHTML = scanStudentHTML(gene, qid, mine[qid] ?? null, open, reveal, truth, failed);
       return;
     }
     if (roomData.activity === "prs") {
