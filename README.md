@@ -245,12 +245,27 @@ heritability of height). Names take free spots with a thin line back to their
 dot, and dots that would overlap are nudged apart slightly. The knob is only on
 your screen.
 
+**GWAS size.** A second knob, beside the plot on the projector (under it in the
+console), sets how many people were in the GWAS the score comes from, from
+1,000 to 10 million, and R² follows from it with the usual expectation for a
+polygenic score (Daetwyler et al. 2008), R² = h² / (1 + M / (N·h²)). Here
+h² = 0.5, about what common SNPs can capture for height, and M = 400,000,
+chosen so the curve passes near the published height GWAS: about 0.44 at 5.4
+million people, the largest (2022), which reported 40–45% in people of European
+ancestry. A small chart shows the curve, where the score sits on it, and the
+heritability of height (0.8) above the 0.5 ceiling. Turning the R² knob instead
+reads off the GWAS size it would take, and past 0.5 it says *out of reach*: no
+GWAS of common SNPs gets there, however large. Presets: 10,000, 100,000,
+1 million and 5.4 million. Both constants are at the top of the GWAS code in
+`index.html` (`GWAS_H2`, `GWAS_M`) if you'd rather other numbers.
+
 **Present it straight through.** **Add to lecture** puts two steps in your
 question list, *Activity: your celebrity's genotypes* and *Prediction plot*;
 move them where they belong with ↑ ↓. In Present mode, <kbd>→</kbd> then walks
 from a poll to the activity (phones show each student's celebrity), to the
-plot, and on to the next poll. On the plot, drag the knob or press
-<kbd>↑</kbd> <kbd>↓</kbd> to change R² by 0.05.
+plot, and on to the next poll. On the plot, drag the knobs, press
+<kbd>↑</kbd> <kbd>↓</kbd> to change R² by 0.05, or <kbd>shift</kbd> <kbd>↑</kbd>
+<kbd>↓</kbd> to change the GWAS size (by a quarter of a factor of ten).
 
 ### Re-poll: before and after
 

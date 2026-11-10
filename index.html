@@ -201,6 +201,25 @@ window.FIREBASE_CONFIG = {
   /* prediction plot: score vs height, with an R² knob */
   .plot{display:grid;gap:12px}
   .plot svg{width:100%;height:auto;max-height:66vh;display:block;overflow:visible}
+  .plot-main{display:grid;gap:14px 28px;align-items:center}
+  body.present .plot-main{grid-template-columns:minmax(0,1fr) 360px}
+  .gwas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:8px 24px;align-items:center}
+  body.present .gwas{grid-template-columns:minmax(0,1fr)}
+  .gwas .gctl{display:grid;gap:8px;align-content:center}
+  .gwas label{margin:0;font-size:1.6rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
+  .gwas input[type=range]{width:100%;accent-color:var(--accent);height:34px;margin:0}
+  .gwas input.idle{opacity:.35}
+  .gwas .plot-read{font-size:1.7rem;line-height:1.15}
+  .gwas .plot-read small{font-size:1.05rem;font-weight:600;color:var(--muted)}
+  .gwas svg{max-height:none}
+  .gwas .gax text{font-size:15px;fill:var(--muted)}
+  .gwas .gax line{stroke:var(--line)}
+  .gwas .gax .glbl{font-size:15px;fill:var(--ink);font-weight:600}
+  .gwas .gcurve{fill:none;stroke:var(--steel);stroke-width:3}
+  .gwas .gref{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 5}
+  .gwas .greflbl{font-size:15px;fill:var(--muted)}
+  .gwas .gguide{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 4;opacity:.7}
+  .gwas .gdot{fill:var(--accent);stroke:#fff;stroke-width:2}
   .plot .dot{fill:var(--accent);fill-opacity:.85;stroke:#fff;stroke-width:1.5}
   .plot .name{font-size:14px;fill:var(--ink);dominant-baseline:middle}
   .plot .lead{stroke:var(--muted);stroke-width:1;opacity:.75}
@@ -601,6 +620,60 @@ function plotPred(m, i, r2){
   return m.mh + m.sh * r * g;
 }
 
+// GWAS size → how good a score can be. The usual expectation for a polygenic score
+// (Daetwyler et al. 2008):  R² = h² / (1 + M / (N · h²)),  N the number of people in the
+// GWAS, h² the share of the variation the SNPs can capture at best (about half, for height
+// and common SNPs, against a heritability of about 0.8), and M the effective number of
+// independent effects to estimate. M is set so the curve passes near the published height
+// GWAS: about 0.1 at 184,000 people (2010), 0.25 at 700,000 (2018) and 0.44 at 5.4 million
+// (2022, which reported 40–45% in people of European ancestry).
+const GWAS_H2 = 0.5, GWAS_M = 4e5, GWAS_LO = 3, GWAS_HI = 7;        // knob: 1,000 to 10 million
+const gwasR2 = n => GWAS_H2 / (1 + GWAS_M / (n * GWAS_H2));
+const gwasN = r2 => r2 <= 0 ? 0 : r2 >= GWAS_H2 ? Infinity : GWAS_M * r2 / (GWAS_H2 * (GWAS_H2 - r2));
+function fmtPeople(n){
+  const sig = v => String(Number(v.toPrecision(2)));
+  if (n < 1e6) return Number(n.toPrecision(2)).toLocaleString("en-US");
+  if (n < 1e9) return sig(n / 1e6) + " million";
+  return sig(n / 1e9) + " billion";
+}
+// The GWAS-size reading: how many people it takes to get the score's R².
+function gwasRead(r2, n){
+  if (r2 === null) return `<small>drag, or pick a size</small>`;
+  if (n == null) n = gwasN(r2);
+  if (!Number.isFinite(n)) return `out of reach <small>at any size</small>`;
+  if (n < 1000) return n > 0 ? `<small>under</small> 1,000` : "—";
+  if (n > 8e9) return `<small>more people than are alive</small>`;
+  return `${fmtPeople(n)} <small>people</small>`;
+}
+
+function gwasHTML(){
+  const W = 300, H = 250, L = 30, R = 12, T = 30, B = 54;
+  const gx = lg => L + (lg - GWAS_LO) / (GWAS_HI - GWAS_LO) * (W - L - R), gy = v => T + (1 - v) * (H - T - B);
+  const curve = Array.from({ length: 81 }, (_, k) => {
+    const lg = GWAS_LO + k / 80 * (GWAS_HI - GWAS_LO);
+    return (k ? "L" : "M") + gx(lg).toFixed(1) + " " + gy(gwasR2(10 ** lg)).toFixed(1);
+  }).join("");
+  const xt = ["1k", "10k", "100k", "1M", "10M"];
+  return { gx, gy, box: { l: L, r: W - R, t: T, b: H - B }, html: `
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="How much of the variation a score explains, against the number of people in the GWAS">
+        <g class="gax">
+          ${[0, 1].map(v => `<line x1="${L}" x2="${W - R}" y1="${gy(v)}" y2="${gy(v)}"/>`).join("")}
+          <text x="${L - 8}" y="${gy(0) + 5}" text-anchor="end">0</text>
+          <text x="${L - 8}" y="${gy(1) + 5}" text-anchor="end">1</text>
+          <text class="glbl" x="${L - 8}" y="${T - 12}">R²</text>
+          ${xt.map((t, k) => `<text x="${gx(GWAS_LO + k)}" y="${H - B + 20}" text-anchor="middle">${t}</text>`).join("")}
+          <text class="glbl" x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">people in the GWAS</text>
+        </g>
+        <line class="gref" x1="${L}" x2="${W - R}" y1="${gy(0.8)}" y2="${gy(0.8)}"/>
+        <text class="greflbl" x="${L + 6}" y="${gy(0.8) - 6}">heritability of height · 0.8</text>
+        <line class="gref" x1="${L}" x2="${W - R}" y1="${gy(GWAS_H2)}" y2="${gy(GWAS_H2)}"/>
+        <text class="greflbl" x="${L + 6}" y="${gy(GWAS_H2) - 6}">ceiling for common SNPs · ${GWAS_H2}</text>
+        <path class="gcurve" d="${curve}"/>
+        <line class="gguide" id="gh"/><line class="gguide" id="gv"/>
+        <circle class="gdot" id="gdot" r="7"/>
+      </svg>` };
+}
+
 function plotHTML(m){
   const W = 1000, H = 540, L = 70, R = 24, T = 16, B = 62;
   // Both axes are heights in cm on the same range, so the diagonal is "predicted = actual".
@@ -608,11 +681,13 @@ function plotHTML(m){
   const hi = Math.ceil(Math.max(...m.h, m.mh + 2.5 * m.sh) / 10) * 10 + 5;
   const px = v => L + (v - lo) / (hi - lo) * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
   const ticks = []; for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) ticks.push(v);
-  return { geom: { px, py, box: { l: L, r: W - 4, t: T, b: H - B } },
+  const g = gwasHTML();
+  return { geom: { px, py, box: { l: L, r: W - 4, t: T, b: H - B }, gwas: g },
     html: `
     <div class="stitle">Activity</div>
     <div class="qtext" style="margin-bottom:8px">How well does the score predict height?</div>
     <div class="plot" id="plot">
+      <div class="plot-main">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Each celebrity's predicted height against their reported height">
         <defs><clipPath id="plotclip"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/></clipPath></defs>
         <g class="ax">
@@ -631,6 +706,21 @@ function plotHTML(m){
         <g class="dots">${m.ids.map((c, i) => `<circle class="dot" data-i="${i}" r="${DOT_R}"/>`).join("")}</g>
         <g class="names">${m.ids.map((c, i) => `<text class="name" data-i="${i}">${esc(PRS.people[c].name)}</text>`).join("")}</g>
       </svg>
+      <div class="gwas">
+        <div class="gctl">
+          <label for="gwasn">GWAS size</label>
+          <input type="range" id="gwasn" min="${GWAS_LO}" max="${GWAS_HI}" step="0.01" value="5">
+          <span class="plot-read" id="nread"></span>
+          <div class="plot-presets">
+            <button class="small ghost" data-n="1e4">10,000</button>
+            <button class="small ghost" data-n="1e5">100,000</button>
+            <button class="small ghost" data-n="1e6">1 million</button>
+            <button class="small ghost" data-n="5.4e6">5.4 million · 2022</button>
+          </div>
+        </div>
+        ${g.html}
+      </div>
+      </div>
       <div class="plot-ctl">
         <label for="r2">R²</label>
         <input type="range" id="r2" min="0" max="1" step="0.01" value="${(m.r * m.r).toFixed(2)}">
@@ -745,19 +835,52 @@ function plotGlide(root, to){
 }
 
 // Move every prediction to where R² puts it (null: the class's own scores). Heights stay put.
-function plotPaint(root, m, geom, r2){
+// n is the GWAS size when that's the knob that was turned (R² then follows from it).
+function plotPaint(root, m, geom, r2, n = null){
   const pts = m.ids.map((_, i) => ({ x: geom.px(plotPred(m, i, r2)), y: geom.py(m.h[i]) }));
   root.querySelectorAll(".dot").forEach((c, i) => { c.dataset.tx = pts[i].x.toFixed(2); c.dataset.ty = pts[i].y.toFixed(2); });
   plotGlide(root, plotLayout(root, pts, geom.box, !root.querySelector("#plot").classList.contains("nonames")));
-  const shown = r2 === null ? m.r * m.r : r2;
+  const shown = r2 === null ? m.r * m.r : r2, pct = Math.round(shown * 100);
   root.querySelector("#r2read").textContent = shown.toFixed(2);
+  root.querySelector("#r2").value = shown.toFixed(2);
+  const ceil = Math.round(GWAS_H2 * 100);
   root.querySelector("#plotnote").textContent = r2 === null
-    ? `Predicted from the scores you computed (teaching data): they explain ${Math.round(m.r * m.r * 100)}% of the variation in these celebrities' heights.`
+    ? `Predicted from the scores you computed (teaching data): they explain ${pct}% of the variation in these celebrities' heights.`
+    : n !== null ? `A GWAS of ${fmtPeople(n)} people: a score from it explains ${pct}% of the variation in height` + (
+        n >= 2e6 ? `. Each extra million people adds less: common SNPs top out at about ${ceil}%.`
+        : r2 < 0.02 ? ", so its predictions barely move off the class average." : ".")
     : r2 >= 0.995 ? "Every prediction exactly right: all the dots on the diagonal."
     : r2 <= 0.005 ? "The score tells us nothing, so the best guess for everyone is the class average."
-    : `A score that explains ${Math.round(r2 * 100)}% of the variation: predictions move toward the truth, but most stay well off it.`;
+    : r2 >= GWAS_H2 ? `A score that explains ${pct}% of the variation. Common SNPs capture only about ${ceil}% of the variation in height, so no GWAS of them gets this far, however large.`
+    : `A score that explains ${pct}% of the variation: predictions move toward the truth, but most stay well off it.`;
   root.querySelectorAll(".plot-presets [data-r2]").forEach(b => b.classList.toggle("on",
-    b.dataset.r2 === "real" ? r2 === null : r2 !== null && Math.abs(+b.dataset.r2 - r2) < 0.005));
+    b.dataset.r2 === "real" ? r2 === null : r2 !== null && n === null && Math.abs(+b.dataset.r2 - r2) < 0.005));
+  root.querySelectorAll(".plot-presets [data-n]").forEach(b => b.classList.toggle("on",
+    n !== null && Math.abs(Math.log10(n) - Math.log10(+b.dataset.n)) < 0.005));
+  gwasPaint(root, geom.gwas, r2, n);
+}
+
+// The GWAS panel: its knob and reading, and a dot on the curve where the score sits.
+function gwasPaint(root, g, r2, n){
+  const need = r2 === null ? null : n !== null ? n : gwasN(r2);
+  root.querySelector("#nread").innerHTML = gwasRead(r2, n);
+  root.querySelector("#gwasn").classList.toggle("idle", r2 === null);
+  if (need !== null) root.querySelector("#gwasn").value =
+    Math.min(GWAS_HI, Math.max(GWAS_LO, need > 0 ? Math.log10(need) : GWAS_LO)).toFixed(2);
+  const dot = root.querySelector("#gdot"), gh = root.querySelector("#gh"), gv = root.querySelector("#gv");
+  const set = (el, a) => Object.entries(a).forEach(([k, v]) => el.setAttribute(k, typeof v === "number" ? v.toFixed(1) : v));
+  if (r2 === null) { [dot, gh, gv].forEach(el => set(el, { visibility: "hidden" })); return; }
+  const y = g.gy(r2), lg = need > 0 && Number.isFinite(need) ? Math.log10(need) : null;
+  if (lg !== null && lg >= GWAS_LO - 1e-9 && lg <= GWAS_HI + 1e-9) {
+    const x = g.gx(lg);
+    set(dot, { visibility: "visible", cx: x, cy: y });
+    set(gh, { visibility: "visible", x1: g.box.l, x2: x, y1: y, y2: y });
+    set(gv, { visibility: "visible", x1: x, x2: x, y1: y, y2: g.box.b });
+  } else {
+    // Off the knob's range (or out of reach of any GWAS): just mark the level, all the way across.
+    set(dot, { visibility: "hidden" }); set(gv, { visibility: "hidden" });
+    set(gh, { visibility: "visible", x1: g.box.l, x2: g.box.r, y1: y, y2: y });
+  }
 }
 
 function discussHTML(title, points){
@@ -1505,23 +1628,34 @@ async function teacher(room){
     cancelAnimationFrame(box.__plotRaf || 0);
     box.__plotNow = null;                   // a fresh plot starts from its own first layout
     box.innerHTML = html;
-    let r2 = null;
-    const paint = () => plotPaint(box, m, geom, r2);
-    const slider = box.querySelector("#r2");
-    slider.oninput = () => { r2 = +slider.value; paint(); };
-    // Let go of the slider once it's set, so ← → go back to stepping through the lecture;
-    // ↑ ↓ nudge the knob instead.
+    // r2: how good the score is (null: the class's own scores). n: the GWAS size, when
+    // that's the knob that was turned; R² then follows from it.
+    let r2 = null, n = null;
+    const paint = () => plotPaint(box, m, geom, r2, n);
+    const slider = box.querySelector("#r2"), nslider = box.querySelector("#gwasn");
+    slider.oninput = () => { r2 = +slider.value; n = null; paint(); };
+    const setN = v => { n = v; r2 = gwasR2(n); paint(); };
+    nslider.oninput = () => setN(10 ** +nslider.value);
+    // Let go of a slider once it's set, so ← → go back to stepping through the lecture;
+    // ↑ ↓ nudge R² instead, and shift ↑ ↓ the GWAS size.
     slider.onchange = () => slider.blur();
+    nslider.onchange = () => nslider.blur();
     box.__nudge = step => {
       r2 = Math.round(Math.min(1, Math.max(0, (r2 === null ? m.r * m.r : r2) + step)) * 100) / 100;
-      slider.value = r2.toFixed(2);
+      n = null;
       paint();
+    };
+    box.__nudgeN = dir => {
+      const cur = n !== null ? n : r2 === null ? 10 ** +nslider.value : gwasN(r2);
+      const lg = !(cur > 0) ? GWAS_LO : Number.isFinite(cur) ? Math.log10(cur) : GWAS_HI + 0.25;
+      setN(10 ** Math.min(GWAS_HI, Math.max(GWAS_LO, Math.round((lg + dir * 0.25) * 4) / 4)));
     };
     box.querySelectorAll(".plot-presets [data-r2]").forEach(b => b.onclick = () => {
       r2 = b.dataset.r2 === "real" ? null : +b.dataset.r2;
-      slider.value = (r2 === null ? m.r * m.r : r2).toFixed(2);
+      n = null;
       paint();
     });
+    box.querySelectorAll(".plot-presets [data-n]").forEach(b => b.onclick = () => setN(+b.dataset.n));
     box.querySelector("#plotnames").onclick = e => {
       const plot = box.querySelector("#plot");
       plot.classList.toggle("nonames");
@@ -1601,7 +1735,9 @@ async function teacher(room){
     else if (e.key === "p" || e.key === "P") repoll();
     else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot")) {
       e.preventDefault();
-      document.getElementById("results").__nudge(e.key === "ArrowUp" ? 0.05 : -0.05);
+      const box = document.getElementById("results"), up = e.key === "ArrowUp";
+      if (e.shiftKey) box.__nudgeN(up ? 1 : -1);
+      else box.__nudge(up ? 0.05 : -0.05);
     }
     else if (e.key === "Escape") setPresent(false);
   });
