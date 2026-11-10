@@ -193,7 +193,9 @@ person's residual. Under the plot, the p-value for the same effect tested in
 400 (the people shown), 1,000, 10,000, 100,000 and 1 million people, from
 t² = (N − 2)·R² / (1 − R²); genome-wide significant ones (p < 5 × 10⁻⁸) are in
 maroon. At 0.5 cm and p = 0.4 it takes about 100,000 people; at 0.05 cm not
-even a million is enough. Phones say "Look at the screen."
+even a million is enough. Anything below 10⁻⁹⁹⁹ shows as "< 10⁻⁹⁹⁹". Nothing
+on the slide moves or changes size as the knobs turn, and in present mode the
+slide sits in the middle of the screen. Phones say "Look at the screen."
 
 ### Slides: several questions at once
 

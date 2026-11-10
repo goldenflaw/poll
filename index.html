@@ -168,10 +168,13 @@ window.FIREBASE_CONFIG = {
 
   /* one-SNP demo: height against genotype, with an effect-size knob */
   .snp-main{display:grid;gap:14px 28px;align-items:center}
-  body.present .snp-main{grid-template-columns:minmax(0,calc(54vh * 900 / 520)) 400px;justify-content:start}
+  body.present .snp-main{grid-template-columns:minmax(0,max(780px,calc(54vh * 900 / 520))) 440px;justify-content:center}
+  body.present .snp-slide{width:fit-content;max-width:100%;margin:0 auto}
   .snp-left{display:grid;gap:10px;min-width:0}
   .snp-left > svg{width:100%;height:auto;max-height:54vh;display:block;overflow:visible}
-  table.snp-p{width:100%;border-collapse:collapse;font-size:1.15rem;font-variant-numeric:tabular-nums}
+  table.snp-p{width:100%;border-collapse:collapse;font-size:1.15rem;font-variant-numeric:tabular-nums;table-layout:fixed}
+  table.snp-p col.pth{width:7.4em}
+  .snp sup{line-height:0}
   table.snp-p th{text-align:left;font-weight:600;color:var(--muted);padding:5px 10px 5px 0;white-space:nowrap}
   table.snp-p td{text-align:right;padding:5px 0 5px 10px;white-space:nowrap}
   table.snp-p tr + tr{border-top:1px solid var(--line)}
@@ -181,6 +184,7 @@ window.FIREBASE_CONFIG = {
   .snp-pnote{margin:0;font-size:1rem;color:var(--muted)}
   .snp-side{display:grid;gap:12px;align-content:center}
   .snp-box{border:1px solid var(--line);border-radius:12px;padding:12px 16px 14px;background:var(--panel);display:grid;gap:8px;min-width:0}
+  .snp-box > *{min-width:0}
   .snp-box h4{margin:0;font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
   .snp-box h4 + .snp-knob{margin-top:0}
   .snp-boxhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -203,8 +207,8 @@ window.FIREBASE_CONFIG = {
   .snp-ss div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
   .snp-ss small{font-size:.9rem;color:var(--muted)}
   .snp-ss b{font-size:1.5rem}
-  .snp-r2{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
-  .snp-r2 .lbl{font-size:1.4rem;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  .snp-r2{display:grid;gap:4px}
+  .snp-r2 .lbl{font-size:1.25rem;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
   .snp-r2 b{font-size:2.8rem;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
   .snp .sres{stroke:var(--steel);stroke-width:1.2;opacity:.45;display:none}
   .snp.resid .sres{display:inline}
@@ -213,6 +217,7 @@ window.FIREBASE_CONFIG = {
   .snp-barlbl{display:flex;justify-content:space-between;gap:12px;font-size:1rem;color:var(--muted)}
   .snp-barlbl span:first-child{color:var(--accent);font-weight:700}
   .snp-formula{margin:0;font-size:1.2rem;color:var(--ink);line-height:1.5;font-variant-numeric:tabular-nums}
+  .snp-formula > span{display:block;white-space:nowrap}
 
   /* image steps */
   .fig{margin:0}
@@ -1027,6 +1032,7 @@ function log10P(z){
   return Math.min(0, ln / Math.LN10);
 }
 function fmtP(l){
+  if (l < -999) return `&lt; 10<sup>−999</sup>`;      // beyond this the digits only make the number longer
   if (l > -3) { const v = 10 ** l; return v >= 0.995 ? "1" : String(Number(v.toPrecision(2))); }
   let e = Math.floor(l), m = 10 ** (l - e);
   if (m >= 9.95) { m = 1; e += 1; }
@@ -1042,6 +1048,7 @@ function snpHTML(title){
   const gx = g => L + (g + 0.6) / 3.2 * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
   const ticks = []; for (let v = lo; v <= hi; v += 10) ticks.push(v);
   return { geom: { gx, py, lo, hi }, html: `
+    <div class="snp-slide">
     <div class="stitle">Reminder</div>
     <div class="qtext" style="margin-bottom:8px">${esc(title || SNP_TITLE)}</div>
     <div class="snp" id="snp">
@@ -1064,6 +1071,7 @@ function snpHTML(title){
         <div class="snp-box">
         <h4>p-value: the same effect, tested in more people</h4>
         <table class="snp-p">
+          <colgroup><col class="pth"><col span="${SNP_NS.length}"></colgroup>
           <tr><th>People tested</th>${SNP_NS.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_N ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
           <tr class="pv"><th>p-value</th>${SNP_NS.map(n => `<td data-n="${n}"></td>`).join("")}</tr>
         </table>
@@ -1103,6 +1111,7 @@ function snpHTML(title){
           </div>
         </div>
       </div>
+    </div>
     </div>` };
 }
 
@@ -1155,8 +1164,8 @@ function snpPaint(root, g, beta, p){
   root.querySelector("#maf").value = SNP_PS.indexOf(p);
   root.querySelector("#sr2").innerHTML = f;
   root.querySelector("#sbar").style.width = (r2 * 100).toFixed(2) + "%";
-  root.querySelector("#sform").innerHTML = `<b>R² = h²<sub>SNP</sub> = 2pq·β² / Var(height)</b><br>
-    = 2 × ${p >= 0.1 ? p.toFixed(2) : p} × ${p >= 0.1 ? (1 - p).toFixed(2) : String(Number((1 - p).toFixed(3)))} × ${fmtB(beta)}² / ${v.toFixed(dec ? 4 : 1)} = ${f}<br>
+  root.querySelector("#sform").innerHTML = `<span><b>R² = h²<sub>SNP</sub> = 2pq·β² / Var(height)</b></span>
+    <span>= 2 × ${p >= 0.1 ? p.toFixed(2) : p} × ${p >= 0.1 ? (1 - p).toFixed(2) : String(Number((1 - p).toFixed(3)))} × ${fmtB(beta)}² / ${v.toFixed(dec ? 4 : 1)} = ${f}</span>
     <span class="muted">Var(height) = Σ (height − average)² / ${SNP_N}</span>`;
   root.querySelectorAll(".plot-presets [data-b]").forEach(b => b.classList.toggle("on",
     +b.dataset.b === 0 ? beta === 0 : beta > 0 && Math.abs(Math.log10(+b.dataset.b / beta)) < 0.01));
