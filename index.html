@@ -169,7 +169,7 @@ window.FIREBASE_CONFIG = {
   /* one-SNP demo: height against genotype, with an effect-size knob */
   .snp-main{display:grid;gap:14px 28px;align-items:center}
   body.present .snp-main{grid-template-columns:minmax(0,calc(54vh * 900 / 520)) 400px;justify-content:start}
-  .snp-left{display:grid;gap:6px;min-width:0}
+  .snp-left{display:grid;gap:10px;min-width:0}
   .snp-left > svg{width:100%;height:auto;max-height:54vh;display:block;overflow:visible}
   table.snp-p{width:100%;border-collapse:collapse;font-size:1.15rem;font-variant-numeric:tabular-nums}
   table.snp-p th{text-align:left;font-weight:600;color:var(--muted);padding:5px 10px 5px 0;white-space:nowrap}
@@ -179,7 +179,11 @@ window.FIREBASE_CONFIG = {
   table.snp-p tr.pv td{font-weight:700;font-size:1.3rem;color:var(--ink)}
   table.snp-p tr.pv td.sig{color:var(--accent)}
   .snp-pnote{margin:0;font-size:1rem;color:var(--muted)}
-  .snp-side{display:grid;gap:10px;align-content:center}
+  .snp-side{display:grid;gap:12px;align-content:center}
+  .snp-box{border:1px solid var(--line);border-radius:12px;padding:12px 16px 14px;background:var(--panel);display:grid;gap:8px;min-width:0}
+  .snp-box h4{margin:0;font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  .snp-box h4 + .snp-knob{margin-top:0}
+  .snp-boxhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .snp-side label{margin:0;font-size:1.6rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
   .snp-side input[type=range]{width:100%;accent-color:var(--accent);height:34px;margin:0}
   .snp-side .plot-read small{font-size:1.05rem;font-weight:600;color:var(--muted)}
@@ -194,11 +198,11 @@ window.FIREBASE_CONFIG = {
   .snp .sfit{stroke:var(--steel);stroke-width:3}
   .snp .sfitlbl{font-size:20px;fill:var(--steel);font-weight:600}
   .snp .sfitkey{stroke:var(--steel);stroke-width:3}
-  .snp-ss{display:grid;gap:4px;margin-top:6px;font-size:1.2rem;color:var(--ink);font-variant-numeric:tabular-nums}
+  .snp-ss{display:grid;gap:4px;font-size:1.2rem;color:var(--ink);font-variant-numeric:tabular-nums}
   .snp-ss div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-  .snp-ss small{display:block;font-size:.9rem;color:var(--muted)}
+  .snp-ss small{font-size:.9rem;color:var(--muted)}
   .snp-ss b{font-size:1.5rem}
-  .snp-r2{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-top:4px}
+  .snp-r2{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
   .snp-r2 .lbl{font-size:1.4rem;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
   .snp-r2 b{font-size:2.8rem;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
   .snp .sres{stroke:var(--steel);stroke-width:1.2;opacity:.45;display:none}
@@ -207,7 +211,7 @@ window.FIREBASE_CONFIG = {
   .snp-bar i{display:block;height:100%;background:var(--accent);border-radius:11px 0 0 11px;min-width:3px}
   .snp-barlbl{display:flex;justify-content:space-between;gap:12px;font-size:1rem;color:var(--muted)}
   .snp-barlbl span:first-child{color:var(--accent);font-weight:700}
-  .snp-formula{margin:4px 0 0;font-size:1.2rem;color:var(--ink);line-height:1.5;font-variant-numeric:tabular-nums}
+  .snp-formula{margin:0;font-size:1.2rem;color:var(--ink);line-height:1.5;font-variant-numeric:tabular-nums}
 
   /* image steps */
   .fig{margin:0}
@@ -1047,35 +1051,46 @@ function snpHTML(title){
           <line class="sfitkey" x1="${L + 14}" x2="${L + 50}" y1="${T + 18}" y2="${T + 18}"/>
           <text class="sfitlbl" x="${L + 60}" y="${T + 25}"></text>
         </svg>
+        <div class="snp-box">
+        <h4>p-value: the same effect, tested in more people</h4>
         <table class="snp-p">
           <tr><th>People tested</th>${SNP_NS.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_N ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
           <tr class="pv"><th>p-value</th>${SNP_NS.map(n => `<td data-n="${n}"></td>`).join("")}</tr>
         </table>
-        <p class="snp-pnote">The same effect, tested in more people: t² = (N − 2)·R² / (1 − R²).
+        <p class="snp-pnote">t² = (N − 2)·R² / (1 − R²).
           <span style="color:var(--accent);font-weight:700">In maroon:</span> genome-wide significant, p &lt; 5 × 10<sup>−8</sup>.</p>
         </div>
+        </div>
         <div class="snp-side">
+          <div class="snp-box">
+          <h4>The SNP</h4>
           <div class="snp-knob"><label for="beta">Effect size β</label><span class="plot-read" id="bread"></span></div>
           <input type="range" id="beta" min="0" max="${SNP_BPOS}" step="1" value="${posAt(2)}">
           <div class="plot-presets">
             <button class="small ghost" data-b="0">0</button>
             <button class="small ghost" data-b="0.05">0.05 cm</button>
-            <button class="small ghost" data-b="0.5">0.5 cm · about the biggest common height SNPs</button>
+            <button class="small ghost" data-b="0.5">0.5 cm · biggest common SNPs</button>
             <button class="small ghost" data-b="2">2 cm</button>
             <button class="small ghost" data-b="5">5 cm</button>
             <button class="small ghost" data-b="10">10 cm</button>
           </div>
           <div class="snp-knob"><label for="maf">Allele frequency p</label><span class="plot-read" id="mread"></span></div>
           <input type="range" id="maf" min="${SNP_PMIN}" max="${SNP_PMAX}" step="0.05" value="0.4">
-          <div class="plot-presets"><button class="small ghost" id="sresbtn">Show residuals</button></div>
+          </div>
+          <div class="snp-box">
+          <div class="snp-boxhead"><h4>R² from the residuals</h4><button class="small ghost" id="sresbtn">Show residuals</button></div>
           <div class="snp-ss">
-            <div><span>Σ residual²<small>spread around the line</small></span><b id="ssres"></b></div>
-            <div><span>Σ (height − average)²<small>spread around the average</small></span><b id="sstot"></b></div>
+            <div><span>Σ residual² <small>around the line</small></span><b id="ssres"></b></div>
+            <div><span>Σ (height − average)² <small>total</small></span><b id="sstot"></b></div>
           </div>
           <div class="snp-r2"><span class="lbl" id="sq"></span><b id="sr2"></b></div>
           <div class="snp-bar"><i id="sbar"></i></div>
           <div class="snp-barlbl"><span>this SNP</span><span>everything else</span></div>
+          </div>
+          <div class="snp-box">
+          <h4>R² as the SNP's heritability</h4>
           <p class="snp-formula" id="sform"></p>
+          </div>
         </div>
       </div>
     </div>` };
@@ -1125,7 +1140,7 @@ function snpPaint(root, g, beta, p){
   root.querySelector("#maf").value = p.toFixed(2);
   root.querySelector("#sr2").innerHTML = f;
   root.querySelector("#sbar").style.width = (r2 * 100).toFixed(2) + "%";
-  root.querySelector("#sform").innerHTML = `<b>= h²<sub>SNP</sub> = 2pq·β² / Var(height)</b><br>
+  root.querySelector("#sform").innerHTML = `<b>R² = h²<sub>SNP</sub> = 2pq·β² / Var(height)</b><br>
     = 2 × ${p.toFixed(2)} × ${(1 - p).toFixed(2)} × ${fmtB(beta)}² / ${v.toFixed(dec ? 4 : 1)} = ${f}<br>
     <span class="muted">Var(height) = Σ (height − average)² / ${SNP_N}</span>`;
   root.querySelectorAll(".plot-presets [data-b]").forEach(b => b.classList.toggle("on",
