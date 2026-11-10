@@ -219,6 +219,31 @@ window.FIREBASE_CONFIG = {
   .snp-formula{margin:0;font-size:1.2rem;color:var(--ink);line-height:1.5;font-variant-numeric:tabular-nums}
   .snp-formula > span{display:block;white-space:nowrap}
 
+  /* LD: a causal SNP's regression beside two SNPs in LD with it */
+  body.present .ld-slide{width:100%}
+  .ld-main{display:grid;gap:14px 24px;align-items:start}
+  body.present .ld-main{grid-template-columns:minmax(0,1fr) 380px}
+  .ld-left{display:grid;gap:6px;min-width:0}
+  .ld svg.ldp{width:100%;height:auto;max-height:44vh;display:block;overflow:visible}
+  .ld-strip{margin-top:6px}
+  .ld .ldt{font-size:23px;font-weight:700;fill:var(--ink)}
+  .ld .lds{font-size:18px;fill:var(--accent);font-weight:700}
+  .ld .ylbl{font-size:18px;fill:var(--ink);font-weight:600}
+  .ld .lddot{fill-opacity:.85}
+  .ld .lddot.g0,.ld-key .g0{fill:#cfcfd6;background:#cfcfd6}
+  .ld .lddot.g1,.ld-key .g1{fill:#d88080;background:#d88080}
+  .ld .lddot.g2,.ld-key .g2{fill:#800000;background:#800000}
+  .ld .ldfit{font-size:21px;fill:var(--ink);font-variant-numeric:tabular-nums}
+  .ld .ldfit .v{font-weight:700}
+  .ld .ldfit.sig .pv{fill:var(--accent);font-weight:700}
+  .ld-key .ldsig{margin-left:auto;color:var(--accent);font-weight:600}
+  .ld-key{margin-top:8px}
+  .ld .snp-side .plot-presets button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .ldstrip{width:100%;height:auto;display:block}
+  .ldstrip rect.on{fill:var(--accent)}
+  .ldstrip rect.off{fill:#e4e4e8}
+  .ldstrip .ldrow{font-size:17px;font-weight:700;fill:var(--ink)}
+
   /* colocalization: GWAS and eQTL at one locus, with an LD knob */
   .coloc .snp-left > svg{max-height:64vh}
   body.present .coloc .snp-main{grid-template-columns:minmax(0,max(780px,calc(64vh * 900 / 600))) 440px}
@@ -254,6 +279,9 @@ window.FIREBASE_CONFIG = {
   .cpp .rest{font-size:1rem !important;color:var(--muted) !important}
   .cpp .rest b{font-size:1.1rem}
   .cleads{margin:0;font-size:1.1rem;color:var(--ink);line-height:1.45;min-height:3em}
+  .cleads.muted{font-size:1rem;color:var(--muted);min-height:0}
+  .cleads sup{line-height:0}
+  .cleads b.yes{color:var(--accent)}
 
   /* class eQTL scan: one gene per phone, then the class's p-values on screen */
   .gene-plot{width:100%;height:auto;display:block;margin:4px 0 6px}
@@ -715,7 +743,7 @@ function parseDeck(text, existing){
     }
     if (disc && /^[-*•]\s*/.test(line)) { disc.points.push(line.replace(/^[-*•]\s*/, "").slice(0, 300)); return; }
     disc = null;
-    if ((m = line.match(/^(SNP|EQTL|SCAN|COLOC)\s*[:.)]\s*(.*)$/i))) {
+    if ((m = line.match(/^(SNP|EQTL|SCAN|COLOC|LD)\s*[:.)]\s*(.*)$/i))) {
       finishQ(); finishSlide();
       items.push({ kind: m[1].toLowerCase(), title: m[2].trim().slice(0, 299), line: n });
       return;
@@ -741,14 +769,14 @@ function parseDeck(text, existing){
       if (q) q.options.push(m[1].trim());
       else errors.push(`Line ${n}: an option with no question above it.`);
     } else {
-      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the class eQTL scan with “SCAN:”, the colocalization demo with “COLOC:”, options with “-” and slides with “#”.`);
+      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the class eQTL scan with “SCAN:”, the colocalization demo with “COLOC:”, the LD demo with “LD:”, options with “-” and slides with “#”.`);
     }
   });
   finishQ(); finishSlide();
   const newCount = fresh.filter(x => !x.reuse).length;
   const count = k => items.filter(x => x.kind === k).length;
   return { items, errors, newCount, slideCount: count("s"), revisits: fresh.length - newCount,
-           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), scans: count("scan"), colocs: count("coloc") };
+           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), scans: count("scan"), colocs: count("coloc"), lds: count("ld") };
 }
 
 /* ---------- activity: height polygenic score ---------- */
@@ -1717,8 +1745,9 @@ function colocHTML(title){
             </div>
           </div>
           <div class="snp-box">
-            <h4>The lead SNPs</h4>
-            <p class="cleads" id="cleads"></p>
+            <h4>The naive check</h4>
+            <p class="cleads" id="cnaive"></p>
+            <p class="cleads muted" id="cleads"></p>
           </div>
         </div>
       </div>
@@ -1764,9 +1793,189 @@ function colocPaint(root, g, st){
   root.querySelectorAll("[data-same]").forEach(b => b.classList.toggle("on", (b.dataset.same === "1") === st.same));
   root.querySelector("#ccausebtn").textContent = show ? "Hide the causal variants" : "Show the causal variants";
   root.querySelector("#ccausebtn").classList.toggle("on", show);
+  // Look the GWAS lead SNP up in the eQTL results: is it significant there too?
+  const lz = log10P(z2[C.lead1]), hit = lz < GW_LOG10;
+  root.querySelector("#cnaive").innerHTML = `Is the GWAS lead SNP ◆ significant for Gene X's expression?
+    p = <b>${fmtP(lz)}</b>: <b class="${hit ? "yes" : "no"}">${hit ? "yes" : "no"}</b>${hit ? ", so it looks shared" : ""}.`;
   root.querySelector("#cleads").innerHTML = lead2 === C.lead1
     ? `The GWAS and the eQTL have the <b>same lead SNP</b>.`
     : `GWAS lead ◆ and eQTL lead ◇: <b>${kb < 1 ? "under 1" : Math.round(kb)} kb</b> apart, r² = <b>${r2l.toFixed(2)}</b>.`;
+}
+
+/* ---------- demo: LD, one causal SNP and two SNPs near it ---------- */
+// 400 made-up people (800 chromosomes). One SNP changes Gene X's expression; two other SNPs
+// nearby are in LD with it, each with its r² on a knob. All three have the same allele frequency
+// (0.3), so a nearby SNP's regression has slope r·β and R² = r² × the causal SNP's R². Which
+// chromosomes carry a nearby SNP's allele is set to give exactly the r² asked for: of the
+// chromosomes with the causal allele, a share p + D/p carry it (D = r·p·q), of the others p − D/q,
+// each chromosome keeping its own place in line so dots move a few at a time as the knob turns.
+const LD_TITLE = "LD: SNPs near the causal one are associated too";
+const LD_N = 400, LD_P = 0.3, LD_BETA = 0.5, LD_BMAX = 1, LD_SD = 0.5, LD_MU = 6, LD_STRIP = 40;
+const LD_BETAS = [0.1, 0.25, 0.5, 1];          // the signal knob's presets: the causal SNP's effect, log₂ per copy
+const LD_DATA = (() => {
+  const rnd = rng32(hash32("ld-demo-1"));
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const H = 2 * LD_N, nA = Math.round(H * LD_P);
+  const order = Array.from({ length: H }, (_, i) => i);
+  for (let i = H - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  const A = new Uint8Array(H); order.slice(0, nA).forEach(k => (A[k] = 1));
+  const u = [0, 1].map(() => Array.from({ length: H }, () => rnd()));    // places in line at SNPs 2 and 3
+  const g = Array.from({ length: LD_N }, (_, i) => A[2 * i] + A[2 * i + 1]);
+  const jit = Array.from({ length: LD_N }, () => (rnd() - 0.5) * 0.42);
+  // each person's own deviation, re-centred within their causal genotype and scaled, so the causal
+  // SNP's residuals have exactly the spread LD_SD
+  const e = Array.from({ length: LD_N }, () => gauss());
+  [0, 1, 2].forEach(k => { const ix = g.map((v, i) => v === k ? i : -1).filter(i => i >= 0);
+    if (!ix.length) return; const m = ix.reduce((s, i) => s + e[i], 0) / ix.length; ix.forEach(i => (e[i] -= m)); });
+  const s = Math.sqrt(e.reduce((t, v) => t + v * v, 0) / LD_N); e.forEach((v, i) => (e[i] = v * LD_SD / s));
+  const mg = g.reduce((t, v) => t + v, 0) / LD_N;
+  // Chromosomes with and without the causal allele, each in line order, for SNPs 2 and 3. The order
+  // spreads evenly over people's own deviations (a van der Corput sequence over their ranks, base 2
+  // for SNP 2, 3 for SNP 3), so whatever share the knob picks is a fair sample of them and a nearby
+  // SNP's R² comes out close to r² × the causal SNP's, instead of wandering with chance.
+  const vdc = (i, b) => { let f = 1, r = 0; while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); } return r; };
+  const lines = [2, 3].map((base, t) => [1, 0].map(a => Array.from({ length: H }, (_, k) => k).filter(k => A[k] === a)
+    .sort((x, z) => e[x >> 1] - e[z >> 1] || u[t][x] - u[t][z])
+    .map((c, i) => [c, vdc(i + 1, base)]).sort((x, z) => x[1] - z[1]).map(x => x[0])));
+  // the strip: 40 chromosomes, as many with the causal allele as its frequency says
+  const withA = order.slice(0, nA), without = order.slice(nA);
+  const strip = [...withA.slice(0, Math.round(LD_STRIP * LD_P)), ...without.slice(0, LD_STRIP - Math.round(LD_STRIP * LD_P))];
+  return { H, nA, A, g, e, mg, jit, lines, strip };
+})();
+// Which chromosomes carry nearby SNP k's allele (k = 0 or 1) at a given r² with the causal SNP.
+function ldTag(k, r2){
+  const D = LD_DATA, p = LD_P, q = 1 - p, d = Math.sqrt(Math.max(0, Math.min(1, r2))) * p * q;
+  const nAB = Math.round(D.H * (p * p + d)), naB = Math.round(D.H * p) - nAB;
+  const B = new Uint8Array(D.H);
+  D.lines[k][0].slice(0, nAB).forEach(c => (B[c] = 1));
+  D.lines[k][1].slice(0, naB).forEach(c => (B[c] = 1));
+  return { B, g: Array.from({ length: LD_N }, (_, i) => B[2 * i] + B[2 * i + 1]) };
+}
+// Expression at a given effect of the causal SNP (the signal knob): the same people, the same deviations.
+const ldY = beta => LD_DATA.g.map((v, i) => LD_MU + beta * (v - LD_DATA.mg) + LD_DATA.e[i]);
+function ldFit(x, y){
+  const n = x.length, mx = x.reduce((s, v) => s + v, 0) / n, my = y.reduce((s, v) => s + v, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; syy += (y[i] - my) ** 2; }
+  const slope = sxx ? sxy / sxx : 0, r2 = sxx && syy ? sxy * sxy / (sxx * syy) : 0;
+  const p = r2 >= 1 ? 0 : tPval(Math.sqrt((n - 2) * r2 / (1 - r2)), n - 2);
+  return { mx, my, slope, r2, p };
+}
+const fmtPv = p => p <= 0 ? "&lt; 10<sup>−300</sup>" : fmtP(Math.log10(p));
+
+function ldHTML(title){
+  const W = 1200, H = 508, PW = 400, T = 64, B = 100;
+  const ys = [...ldY(0), ...ldY(LD_BMAX)], lo = Math.floor(Math.min(...ys) - 0.2), hi = Math.ceil(Math.max(...ys) + 0.2);   // one axis for every setting
+  const py = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const geo = k => { const L = k * PW + (k ? 30 : 74), R = (k + 1) * PW - 14; return { L, R, gx: g => L + (g + 0.6) / 3.2 * (R - L) }; };
+  const ticks = []; for (let v = lo; v <= hi; v++) ticks.push(v);
+  const panel = k => {
+    const { L, R, gx } = geo(k);
+    return `<g class="ldpanel" data-k="${k}">
+      <g class="sax">${ticks.map(v => `<line x1="${L}" x2="${R}" y1="${py(v).toFixed(1)}" y2="${py(v).toFixed(1)}"/>${k === 0 ? `<text x="${L - 10}" y="${(py(v) + 6).toFixed(1)}" text-anchor="end">${v}</text>` : ""}`).join("")}
+        ${[0, 1, 2].map(g => `<text class="gl" x="${gx(g).toFixed(1)}" y="${H - B + 30}" text-anchor="middle">${g}</text>`).join("")}
+        <text class="lbl" x="${((L + R) / 2).toFixed(1)}" y="${H - B + 58}" text-anchor="middle">Copies at ${k ? "SNP " + (k + 1) : "the causal SNP"}</text></g>
+      <text class="ldfit" data-k="${k}" x="${L}" y="${H - 6}"></text>
+      <text class="ldt" x="${L}" y="24">${k ? "SNP " + (k + 1) : "The causal SNP"}</text>
+      <text class="lds" x="${L}" y="48">${k ? "" : "changes Gene X's expression"}</text>
+      <g>${LD_DATA.g.map(() => `<circle class="lddot" r="3.6"/>`).join("")}</g>
+      ${[0, 1, 2].map(g => `<line class="smean" data-g="${g}"/>`).join("")}
+      <line class="sfit"/>
+    </g>`;
+  };
+  return { geom: { geo, py }, html: `
+    <div class="snp-slide ld-slide">
+    <div class="stitle">Linkage disequilibrium</div>
+    <div class="qtext" style="margin-bottom:8px">${esc(title || LD_TITLE)}</div>
+    <div class="snp ld" id="ld">
+      <div class="ld-main">
+        <div class="ld-left">
+          <svg class="ldp" viewBox="0 0 ${W} ${H}" role="img" aria-label="Expression of Gene X in ${LD_N} people against their genotype at the causal SNP and at two SNPs in LD with it">
+            <text class="lbl ylbl" transform="translate(18 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Expression of Gene X (log₂)</text>
+            ${[0, 1, 2].map(panel).join("")}
+          </svg>
+          <div class="ckey ld-key"><span>Dot colour: copies of the causal allele</span>${["0", "1", "2"].map((l, b) => `<span><i class="g${b}"></i>${l}</span>`).join("")}
+            <span class="ldsig">✓ in maroon: genome-wide significant, p &lt; 5 × 10⁻⁸</span></div>
+          <div class="snp-box ld-strip">
+            <h4>${LD_STRIP} of the ${LD_DATA.H} chromosomes <small>maroon: the allele that goes with higher expression</small></h4>
+            <svg class="ldstrip" viewBox="0 0 1000 96" role="img" aria-label="Alleles at the three SNPs on ${LD_STRIP} chromosomes"></svg>
+            <p class="scan-note" id="ldnote"></p>
+          </div>
+        </div>
+        <div class="snp-side">
+          <div class="snp-box">
+            <h4>The signal: the causal SNP's effect</h4>
+            <div class="snp-knob"><label for="ldb">Effect β</label><span class="plot-read" id="ldbread"></span></div>
+            <input type="range" id="ldb" min="0" max="100" step="1">
+            <div class="plot-presets">${LD_BETAS.map(v => `<button class="small ghost" data-b="${v}">${v}</button>`).join("")}</div>
+          </div>
+          <div class="snp-box">
+            <h4>LD with the causal SNP</h4>
+            ${[1, 2].map(k => `
+            <div class="snp-knob"><label for="ldr${k}">SNP ${k + 1}</label><span class="plot-read" id="ldread${k}"></span></div>
+            <input type="range" id="ldr${k}" data-k="${k}" min="0" max="100" step="1">
+            <div class="plot-presets">${[0, 0.2, 0.5, 0.8, 1].map(v => `<button class="small ghost" data-k="${k}" data-r="${v}">${v}</button>`).join("")}</div>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>` };
+}
+
+function ldPaint(root, gm, st){
+  const D = LD_DATA, tags = [ldTag(0, st.r2[0]), ldTag(1, st.r2[1])], Y = ldY(st.beta);
+  const xs = [D.g, tags[0].g, tags[1].g];
+  const fits = xs.map(x => ldFit(x, Y));
+  root.querySelectorAll(".ldpanel").forEach(pg => {
+    const k = +pg.dataset.k, { L, R, gx } = gm.geo(k), x = xs[k], f = fits[k];
+    pg.querySelectorAll(".lddot").forEach((c, i) => {
+      c.setAttribute("cx", gx(x[i] + D.jit[i]).toFixed(1)); c.setAttribute("cy", gm.py(Y[i]).toFixed(1));
+      c.setAttribute("class", `lddot g${D.g[i]}`);
+    });
+    const cnt = [0, 1, 2].map(v => x.filter(t => t === v).length);
+    pg.querySelectorAll(".smean").forEach(l => {
+      const v = +l.dataset.g, ys = Y.filter((_, i) => x[i] === v), m = ys.reduce((s, t) => s + t, 0) / (ys.length || 1);
+      l.setAttribute("x1", gx(v - 0.26).toFixed(1)); l.setAttribute("x2", gx(v + 0.26).toFixed(1));
+      l.setAttribute("y1", gm.py(m).toFixed(1)); l.setAttribute("y2", gm.py(m).toFixed(1));
+      l.setAttribute("visibility", cnt[v] > 1 ? "visible" : "hidden");
+    });
+    const at = v => f.my + f.slope * (v - f.mx), fit = pg.querySelector(".sfit");
+    fit.setAttribute("x1", gx(-0.45).toFixed(1)); fit.setAttribute("y1", gm.py(at(-0.45)).toFixed(1));
+    fit.setAttribute("x2", gx(2.45).toFixed(1)); fit.setAttribute("y2", gm.py(at(2.45)).toFixed(1));
+    if (k) pg.querySelector(".lds").textContent = `r² = ${st.r2[k - 1].toFixed(2)} with the causal SNP`;
+  });
+  root.querySelectorAll(".ldfit").forEach(el => {
+    const k = +el.dataset.k, f = fits[k];
+    const sig = f.p < 5e-8;
+    // p as m × 10^e, the exponent raised with dy (SVG text has no <sup>)
+    const l = f.p > 0 ? Math.log10(f.p) : -300;
+    let pv;
+    if (l > -3) pv = `${Number((10 ** l).toPrecision(2))}`;
+    else { let e = Math.floor(l), m = 10 ** (l - e); if (m >= 9.95) { m = 1; e += 1; }
+      pv = `${m.toFixed(1)} × 10<tspan dy="-9" font-size="70%">${String(e).replace("-", "−")}</tspan><tspan dy="9"> </tspan>`; }
+    el.innerHTML = `slope <tspan class="v">${f.slope.toFixed(2)}</tspan><tspan dx="16">R² </tspan><tspan class="v">${f.r2.toFixed(f.r2 < 0.01 ? 3 : 2)}</tspan>` +
+      `<tspan dx="16" class="pv">p <tspan class="v">${pv}</tspan>${sig ? "✓" : ""}</tspan>`;
+    el.classList.toggle("sig", sig);
+  });
+  root.querySelector("#ldbread").innerHTML = `${st.beta.toFixed(2)} <small>log₂/copy</small>`;
+  root.querySelector("#ldb").value = Math.round(st.beta / LD_BMAX * 100);
+  root.querySelectorAll("[data-b]").forEach(b => b.classList.toggle("on", Math.abs(+b.dataset.b - st.beta) < 1e-9));
+  [1, 2].forEach(k => {
+    const v = st.r2[k - 1];
+    root.querySelector(`#ldread${k}`).innerHTML = `r² = ${v.toFixed(2)}`;
+    root.querySelector(`#ldr${k}`).value = Math.round(v * 100);
+    root.querySelectorAll(`[data-r][data-k="${k}"]`).forEach(b => b.classList.toggle("on", Math.abs(+b.dataset.r - v) < 1e-9));
+  });
+  // the strip: one column per chromosome, sorted by the causal allele, then SNP 2's
+  const cols = [...D.strip].sort((a, b) => D.A[b] - D.A[a] || tags[0].B[b] - tags[0].B[a] || tags[1].B[b] - tags[1].B[a] || a - b);
+  const rows = [["Causal", c => D.A[c]], ["SNP 2", c => tags[0].B[c]], ["SNP 3", c => tags[1].B[c]]];
+  const X0 = 84, cw = (1000 - X0) / LD_STRIP;
+  root.querySelector(".ldstrip").innerHTML = rows.map(([name, has], r) => `
+    <text class="ldrow" x="${X0 - 12}" y="${r * 32 + 21}" text-anchor="end">${name}</text>
+    ${cols.map((c, j) => `<rect class="${has(c) ? "on" : "off"}" x="${(X0 + j * cw + 1.5).toFixed(1)}" y="${r * 32 + 3}" width="${(cw - 3).toFixed(1)}" height="25" rx="3"/>`).join("")}`).join("");
+  const same = k => cols.filter(c => D.A[c] === tags[k].B[c]).length;
+  root.querySelector("#ldnote").innerHTML = `The same allele as the causal SNP on <b>${same(0)}</b> of ${LD_STRIP} chromosomes at SNP 2,
+    <b>${same(1)}</b> at SNP 3. Expected R² at a nearby SNP: r² × ${fits[0].r2.toFixed(2)} (the causal SNP's R²).`;
 }
 
 function figureHTML(src, title){
@@ -2027,7 +2236,7 @@ async function teacher(room){
   // "plot" (the prediction plot on screen), so arrow keys walk through them like polls.
   const stepOf   = it => it && it.kind === "s" ? it.s.step || null : null;
   const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot", image: "Image", snp: "One SNP's R²",
-                      eqtl: "An eQTL's R²", scan: "Class eQTL scan", coloc: "Colocalization", discuss: "Discussion" };
+                      eqtl: "An eQTL's R²", scan: "Class eQTL scan", coloc: "Colocalization", ld: "LD", discuss: "Discussion" };
   // Sessions saved before slides existed have `current` but no `show`.
   const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
                           : roomData.current ? [roomData.current] : []).filter(id => qById(id));
@@ -2180,7 +2389,7 @@ async function teacher(room){
           brings back the earlier question with the same wording · <code class="inline">D:</code> a discussion prompt ·
           <code class="inline">IMG:</code> a picture · <code class="inline">SNP:</code> the one-SNP regression demo
           (<code class="inline">EQTL:</code> the same for a gene's expression) · <code class="inline">SCAN:</code> the class eQTL scan ·
-          <code class="inline">COLOC:</code> the colocalization demo ·
+          <code class="inline">COLOC:</code> the colocalization demo · <code class="inline">LD:</code> the LD demo ·
           <code class="inline">//</code> notes are ignored.</p>
         <label class="check" style="margin-top:8px"><input type="checkbox" id="atstart">
           <span>Add at the start of the lecture <span class="muted">— otherwise everything goes after your current questions</span></span></label>
@@ -2207,7 +2416,8 @@ async function teacher(room){
           (parsed.snps ? `, ${parsed.snps} one-SNP demo${parsed.snps === 1 ? "" : "s"}` : "") +
           (parsed.eqtls ? `, ${parsed.eqtls} eQTL demo${parsed.eqtls === 1 ? "" : "s"}` : "") +
           (parsed.scans ? `, ${parsed.scans} class eQTL scan${parsed.scans === 1 ? "" : "s"}` : "") +
-          (parsed.colocs ? `, ${parsed.colocs} colocalization demo${parsed.colocs === 1 ? "" : "s"}` : "") + ".";
+          (parsed.colocs ? `, ${parsed.colocs} colocalization demo${parsed.colocs === 1 ? "" : "s"}` : "") +
+          (parsed.lds ? `, ${parsed.lds} LD demo${parsed.lds === 1 ? "" : "s"}` : "") + ".";
     };
     document.getElementById("cancel").onclick = () => closeEditor();
     btn.onclick = async () => {
@@ -2244,8 +2454,8 @@ async function teacher(room){
         writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || SNP_KINDS[it.kind].title, qids: [], order: order++, step: it.kind }]);
         continue;
       }
-      if (it.kind === "coloc") {
-        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || COLOC_TITLE, qids: [], order: order++, step: "coloc" }]);
+      if (it.kind === "coloc" || it.kind === "ld") {
+        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || (it.kind === "ld" ? LD_TITLE : COLOC_TITLE), qids: [], order: order++, step: it.kind }]);
         continue;
       }
       if (it.kind === "scan") {
@@ -2293,9 +2503,9 @@ async function teacher(room){
   async function showItem(id){
     if (plotOn) document.getElementById("prsplot").click();
     const stepIt = items().find(x => x.id === id), step = stepOf(stepIt);
-    if (step === "snp" || step === "eqtl" || step === "coloc") {
+    if (step === "snp" || step === "eqtl" || step === "coloc" || step === "ld") {
       // On screen only (the knob is yours); phones say to look at the screen.
-      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || (step === "coloc" ? COLOC_TITLE : SNP_KINDS[step].title),
+      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || ({ coloc: COLOC_TITLE, ld: LD_TITLE }[step] || SNP_KINDS[step].title),
                                        open: false, reveal: false, activity: "screen" });
       return;
     }
@@ -2689,6 +2899,33 @@ async function teacher(room){
     fitPresent();
   }
 
+  // The LD demo. The two r² knobs are yours, on screen only: drag, click a preset, ↑ ↓ for SNP 2 and
+  // shift ↑ ↓ for SNP 3 (by 0.05).
+  function drawLd(box, cur){
+    const sg = JSON.stringify(["ld", cur.id, cur.s.title]);
+    if (sg === shape) return;
+    shape = sg;
+    app.classList.add("wide");
+    const { html, geom } = ldHTML(cur.s.title);
+    box.innerHTML = html;
+    const st = { beta: LD_BETA, r2: [0.8, 0.2] };
+    const paint = () => ldPaint(box, geom, st);
+    box.querySelectorAll('input[id^="ldr"]').forEach(sl => {
+      sl.oninput = () => { st.r2[+sl.dataset.k - 1] = +sl.value / 100; paint(); };
+      sl.onchange = () => sl.blur();
+    });
+    const sb = box.querySelector("#ldb");
+    sb.oninput = () => { st.beta = Math.round(+sb.value / 100 * LD_BMAX * 100) / 100; paint(); };
+    sb.onchange = () => sb.blur();
+    box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { st.beta = +b.dataset.b; paint(); });
+    box.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { st.r2[+b.dataset.k - 1] = +b.dataset.r; paint(); });
+    const nudge = (k, by) => { st.r2[k] = Math.round(Math.min(1, Math.max(0, st.r2[k] + by)) * 100) / 100; paint(); };
+    box.__nudge = by => nudge(0, by);
+    box.__nudgeN = dir => nudge(1, dir * 0.05);
+    paint();
+    fitPresent();
+  }
+
   // The class eQTL scan on screen. Which genes are the class's comes from the votes (each vote
   // is stored under the student's sign-in id, which picks their gene). The view of all 20,000
   // genes is yours, on screen only; which genes are real (T) goes to phones too.
@@ -2783,7 +3020,7 @@ async function teacher(room){
     else if ((e.key === "t" || e.key === "T" || e.key === "g" || e.key === "G") && document.querySelector("#results #scan")) {
       if (e.key.toLowerCase() === "t") scanTruth(); else scanGenomeToggle();
     }
-    else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot, #results #snp, #results #coloc")) {
+    else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot, #results #snp, #results #coloc, #results #ld")) {
       e.preventDefault();
       const box = document.getElementById("results"), up = e.key === "ArrowUp";
       if (e.shiftKey && box.__nudgeN) box.__nudgeN(up ? 1 : -1);
@@ -2906,6 +3143,19 @@ async function teacher(room){
         <span class="body">
           <span class="t">${esc(it.s.title || SNP_KINDS[stepOf(it)].title)}</span>
           <span class="m">${stepOf(it) === "snp" ? "Height" : "A gene's expression"} against one SNP's genotype, with an effect-size knob${live ? " · showing now" : ""}</span>
+        </span>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
+          ${moves}
+        </span>
+      </div>`;
+      if (stepOf(it) === "ld") return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <span class="body">
+          <span class="t">${esc(it.s.title || LD_TITLE)}</span>
+          <span class="m">A causal SNP's regression beside two SNPs in LD with it, with r² knobs${live ? " · showing now" : ""}</span>
         </span>
         <span class="acts">
           ${show}
@@ -3172,6 +3422,7 @@ async function teacher(room){
     if (stepOf(cur) === "snp" || stepOf(cur) === "eqtl") return drawSnp(box, cur, SNP_KINDS[stepOf(cur)]);
     if (stepOf(cur) === "scan") return drawScan(box, cur);
     if (stepOf(cur) === "coloc") return drawColoc(box, cur);
+    if (stepOf(cur) === "ld") return drawLd(box, cur);
     if (stepOf(cur) === "image") {
       const sig = JSON.stringify(["image", cur.id, cur.s.src]);
       if (sig !== shape) {

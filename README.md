@@ -153,6 +153,7 @@ SNP:                                 ← the one-SNP regression demo (below)
 EQTL:                                ← the same demo for a gene's expression: an eQTL
 SCAN:                                ← the class eQTL scan, one gene per phone (below)
 COLOC:                               ← GWAS and eQTL at one locus, with an LD knob (below)
+LD:                                  ← a causal SNP's regression beside two SNPs in LD with it (below)
 // notes like an answer key are ignored
 ```
 
@@ -237,6 +238,33 @@ neighbouring SNP. LD decays with distance along a genetic map with recombination
 hotspots, each SNP follows the local haplotypes more or less closely (so many
 neighbours of a lead sit well below it, as in real loci), and both studies'
 noise carries the same LD.
+
+Under it, **the naive check**: the GWAS lead SNP looked up in the eQTL results.
+From about r² = 0.4 between the two causal variants it is genome-wide
+significant there ("yes, so it looks shared"), while coloc still says two
+different variants up to about 0.85.
+
+**The LD demo** (`LD:`, optionally followed by a title) sets up colocalization:
+400 made-up people's expression of Gene X against their genotype at the causal
+SNP and at two SNPs near it, side by side, each with its genotype averages,
+regression line, slope, R² and p-value (✓ and maroon: p < 5 × 10⁻⁸). Dots in the
+nearby SNPs' panels are coloured by the person's genotype at the causal SNP, so
+you can see why the association carries over. All three SNPs have allele
+frequency 0.3, so a nearby SNP's slope is r·β and its R² is r² × the causal
+SNP's. Knobs, on your screen only:
+
+- **Effect β** of the causal SNP, 0 to 1 log₂ per copy (presets 0.1, 0.25, 0.5,
+  1). At 0.25 only the causal SNP is genome-wide significant; at 0.5 the SNP at
+  r² 0.8 is too; at 1 even the one at r² 0.2 (p ≈ 10⁻¹²).
+- **LD of SNP 2 and SNP 3** with the causal SNP (presets 0, 0.2, 0.5, 0.8, 1;
+  <kbd>↑</kbd> <kbd>↓</kbd> and <kbd>shift</kbd> <kbd>↑</kbd> <kbd>↓</kbd> by
+  0.05). At r² = 1 a nearby SNP gives exactly the causal SNP's numbers.
+
+Below the plots, 40 of the 800 chromosomes show which alleles travel together at
+the three SNPs. The chromosomes carrying a nearby SNP's allele are chosen to give
+exactly the r² asked for, and spread evenly over people's expression levels, so a
+nearby SNP's R² stays close to r² × the causal one's rather than wandering with
+chance.
 
 ### Slides: several questions at once
 
