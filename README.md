@@ -178,7 +178,11 @@ the regression line and each genotype's average. An **effect size β** knob
 the sum of squared residuals (around the line), the sum of squares around the
 average, R² = 1 − their ratio, and the same number as 2pq·β² / Var(height).
 The residuals stay the same as β grows; only the total does. **Show
-residuals** draws each person's residual. Phones say "Look at the screen."
+residuals** draws each person's residual. Under the plot, the p-value for the
+same effect tested in 200 (the people shown), 1,000, 10,000, 100,000 and
+1 million people, from t² = (N − 2)·R² / (1 − R²); genome-wide significant ones
+(p < 5 × 10⁻⁸) are in maroon. At 0.5 cm, it takes about 100,000 people. Phones
+say "Look at the screen."
 
 ### Slides: several questions at once
 

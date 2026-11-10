@@ -168,8 +168,17 @@ window.FIREBASE_CONFIG = {
 
   /* one-SNP demo: height against genotype, with an effect-size knob */
   .snp-main{display:grid;gap:14px 28px;align-items:center}
-  body.present .snp-main{grid-template-columns:minmax(0,calc(60vh * 900 / 520)) 400px;justify-content:start}
-  .snp-main > svg{width:100%;height:auto;max-height:60vh;display:block;overflow:visible}
+  body.present .snp-main{grid-template-columns:minmax(0,calc(54vh * 900 / 520)) 400px;justify-content:start}
+  .snp-left{display:grid;gap:6px;min-width:0}
+  .snp-left > svg{width:100%;height:auto;max-height:54vh;display:block;overflow:visible}
+  table.snp-p{width:100%;border-collapse:collapse;font-size:1.15rem;font-variant-numeric:tabular-nums}
+  table.snp-p th{text-align:left;font-weight:600;color:var(--muted);padding:5px 10px 5px 0;white-space:nowrap}
+  table.snp-p td{text-align:right;padding:5px 0 5px 10px;white-space:nowrap}
+  table.snp-p tr + tr{border-top:1px solid var(--line)}
+  table.snp-p td small{color:var(--muted)}
+  table.snp-p tr.pv td{font-weight:700;font-size:1.3rem;color:var(--ink)}
+  table.snp-p tr.pv td.sig{color:var(--accent)}
+  .snp-pnote{margin:0;font-size:1rem;color:var(--muted)}
   .snp-side{display:grid;gap:10px;align-content:center}
   .snp-side label{margin:0;font-size:1.6rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
   .snp-side input[type=range]{width:100%;accent-color:var(--accent);height:34px;margin:0}
@@ -961,6 +970,22 @@ const SNP_DATA = (() => {
 })();
 const snpY = (x, beta) => SNP_MU + beta * (x.g - SNP_DATA.mg) + x.e;
 const snpR2 = beta => beta * beta * SNP_DATA.vg / (beta * beta * SNP_DATA.vg + SNP_SD * SNP_SD);
+// The same effect tested in samples of different sizes: t² = (N − 2)·R² / (1 − R²), and a
+// two-sided p-value. Worked in logs (Numerical Recipes' erfc, relative error under 1.2e-7) so
+// that p-values far smaller than a computer can hold, like 10^-5000, still come out right.
+const SNP_NS = [200, 1000, 10000, 100000, 1000000], GW_LOG10 = Math.log10(5e-8);
+function log10P(z){
+  const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.5 * x);
+  const ln = Math.log(t) - x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
+             t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277))))))));
+  return Math.min(0, ln / Math.LN10);
+}
+function fmtP(l){
+  if (l > -3) { const v = 10 ** l; return v >= 0.995 ? "1" : String(Number(v.toPrecision(2))); }
+  let e = Math.floor(l), m = 10 ** (l - e);
+  if (m >= 9.95) { m = 1; e += 1; }
+  return `${m.toFixed(1)} × 10<sup>${e.toLocaleString("en-US").replace("-", "−")}</sup>`;
+}
 
 function snpHTML(title){
   const W = 900, H = 520, L = 78, R = 24, T = 16, B = 78;
@@ -973,6 +998,7 @@ function snpHTML(title){
     <div class="qtext" style="margin-bottom:8px">${esc(title || SNP_TITLE)}</div>
     <div class="snp" id="snp">
       <div class="snp-main">
+        <div class="snp-left">
         <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Height of 200 people against how many copies of the allele they carry, with the regression line">
           <g class="sax">
             ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v)}" y2="${py(v)}"/><text x="${L - 12}" y="${py(v) + 6}" text-anchor="end">${v}</text>`).join("")}
@@ -987,6 +1013,13 @@ function snpHTML(title){
           <line class="sfitkey" x1="${L + 14}" x2="${L + 50}" y1="${T + 18}" y2="${T + 18}"/>
           <text class="sfitlbl" x="${L + 60}" y="${T + 25}"></text>
         </svg>
+        <table class="snp-p">
+          <tr><th>People tested</th>${SNP_NS.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_DATA.people.length ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
+          <tr class="pv"><th>p-value</th>${SNP_NS.map(n => `<td data-n="${n}"></td>`).join("")}</tr>
+        </table>
+        <p class="snp-pnote">The same effect, tested in more people: t² = (N − 2)·R² / (1 − R²).
+          <span style="color:var(--accent);font-weight:700">In maroon:</span> genome-wide significant, p &lt; 5 × 10<sup>−8</sup>.</p>
+        </div>
         <div class="snp-side">
           <label for="beta">Effect size β</label>
           <input type="range" id="beta" min="0" max="${SNP_BMAX}" step="0.1" value="2">
@@ -1039,6 +1072,11 @@ function snpPaint(root, g, beta){
   root.querySelector("#ssres").textContent = n0(ssRes);
   root.querySelector("#sstot").textContent = n0(ssTot);
   root.querySelector("#sq").textContent = `R² = 1 − ${n0(ssRes)} / ${n0(ssTot)} =`;
+  root.querySelectorAll("tr.pv td[data-n]").forEach(td => {
+    const n = +td.dataset.n, l = r2 >= 1 ? -Infinity : log10P(Math.sqrt((n - 2) * r2 / (1 - r2)));
+    td.innerHTML = fmtP(l);
+    td.classList.toggle("sig", l < GW_LOG10);
+  });
   root.querySelector("#bread").innerHTML = `${beta.toFixed(1)} <small>cm per copy</small>`;
   root.querySelector("#beta").value = beta.toFixed(1);
   root.querySelector("#sr2").textContent = f;
