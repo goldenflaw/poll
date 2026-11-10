@@ -249,13 +249,14 @@ your screen.
 console), sets how many people were in the GWAS the score comes from, from
 1,000 to 10 million, and R² follows from it with the usual expectation for a
 polygenic score (Daetwyler et al. 2008), R² = h² / (1 + M / (N·h²)). Here
-h² = 0.5, about what common SNPs can capture for height, and M = 400,000,
-chosen so the curve passes near the published height GWAS: about 0.44 at 5.4
-million people, the largest (2022), which reported 40–45% in people of European
-ancestry. A small chart shows the curve, where the score sits on it, and the
-heritability of height (0.8) above the 0.5 ceiling. Turning the R² knob instead
-reads off the GWAS size it would take, and past 0.5 it says *out of reach*: no
-GWAS of common SNPs gets there, however large. Presets: 10,000, 100,000,
+h² = 0.6, the SNP heritability of height, and M = 1.1 million, chosen so that
+5.4 million people, the largest height GWAS (2022), gives 0.45, the top of the
+40–45% it reported in people of European ancestry. (With a single curve, the
+smaller, earlier GWAS come out somewhat below what they reported.) A small chart
+shows the curve, where the score sits on it, and the heritability of height
+(0.8) above the 0.6 ceiling. Turning the R² knob instead reads off the GWAS size
+it would take, and past 0.6 it says *out of reach*: no GWAS of SNPs gets there,
+however large. Presets: 10,000, 100,000,
 1 million and 5.4 million. Both constants are at the top of the GWAS code in
 `index.html` (`GWAS_H2`, `GWAS_M`) if you'd rather other numbers.
 

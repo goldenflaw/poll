@@ -622,12 +622,12 @@ function plotPred(m, i, r2){
 
 // GWAS size → how good a score can be. The usual expectation for a polygenic score
 // (Daetwyler et al. 2008):  R² = h² / (1 + M / (N · h²)),  N the number of people in the
-// GWAS, h² the share of the variation the SNPs can capture at best (about half, for height
-// and common SNPs, against a heritability of about 0.8), and M the effective number of
-// independent effects to estimate. M is set so the curve passes near the published height
-// GWAS: about 0.1 at 184,000 people (2010), 0.25 at 700,000 (2018) and 0.44 at 5.4 million
-// (2022, which reported 40–45% in people of European ancestry).
-const GWAS_H2 = 0.5, GWAS_M = 4e5, GWAS_LO = 3, GWAS_HI = 7;        // knob: 1,000 to 10 million
+// GWAS, h² the share of the variation the SNPs can capture at best (the SNP heritability,
+// about 0.6 for height, against a heritability of about 0.8), and M the effective number of
+// independent effects to estimate. M is set so that 5.4 million people, the largest height
+// GWAS (2022), gives 0.45, the top of the 40–45% it reported in people of European
+// ancestry. With one curve shape, the smaller, earlier GWAS then come out somewhat low.
+const GWAS_H2 = 0.6, GWAS_M = 1.1e6, GWAS_LO = 3, GWAS_HI = 7;      // knob: 1,000 to 10 million
 const gwasR2 = n => GWAS_H2 / (1 + GWAS_M / (n * GWAS_H2));
 const gwasN = r2 => r2 <= 0 ? 0 : r2 >= GWAS_H2 ? Infinity : GWAS_M * r2 / (GWAS_H2 * (GWAS_H2 - r2));
 function fmtPeople(n){
@@ -667,7 +667,7 @@ function gwasHTML(){
         <line class="gref" x1="${L}" x2="${W - R}" y1="${gy(0.8)}" y2="${gy(0.8)}"/>
         <text class="greflbl" x="${L + 6}" y="${gy(0.8) - 6}">heritability of height · 0.8</text>
         <line class="gref" x1="${L}" x2="${W - R}" y1="${gy(GWAS_H2)}" y2="${gy(GWAS_H2)}"/>
-        <text class="greflbl" x="${L + 6}" y="${gy(GWAS_H2) - 6}">ceiling for common SNPs · ${GWAS_H2}</text>
+        <text class="greflbl" x="${L + 6}" y="${gy(GWAS_H2) - 6}">SNP heritability · ${GWAS_H2}</text>
         <path class="gcurve" d="${curve}"/>
         <line class="gguide" id="gh"/><line class="gguide" id="gv"/>
         <circle class="gdot" id="gdot" r="7"/>
@@ -847,11 +847,11 @@ function plotPaint(root, m, geom, r2, n = null){
   root.querySelector("#plotnote").textContent = r2 === null
     ? `Predicted from the scores you computed (teaching data): they explain ${pct}% of the variation in these celebrities' heights.`
     : n !== null ? `A GWAS of ${fmtPeople(n)} people: a score from it explains ${pct}% of the variation in height` + (
-        n >= 2e6 ? `. Each extra million people adds less: common SNPs top out at about ${ceil}%.`
+        n >= 2e6 ? `. Each extra million people adds less: SNPs top out at about ${ceil}%.`
         : r2 < 0.02 ? ", so its predictions barely move off the class average." : ".")
     : r2 >= 0.995 ? "Every prediction exactly right: all the dots on the diagonal."
     : r2 <= 0.005 ? "The score tells us nothing, so the best guess for everyone is the class average."
-    : r2 >= GWAS_H2 ? `A score that explains ${pct}% of the variation. Common SNPs capture only about ${ceil}% of the variation in height, so no GWAS of them gets this far, however large.`
+    : r2 >= GWAS_H2 ? `A score that explains ${pct}% of the variation. That's more than the SNP heritability of height (about ${ceil}%), so no GWAS of SNPs gets this far, however large.`
     : `A score that explains ${pct}% of the variation: predictions move toward the truth, but most stay well off it.`;
   root.querySelectorAll(".plot-presets [data-r2]").forEach(b => b.classList.toggle("on",
     b.dataset.r2 === "real" ? r2 === null : r2 !== null && n === null && Math.abs(+b.dataset.r2 - r2) < 0.005));
