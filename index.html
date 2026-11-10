@@ -164,9 +164,6 @@ window.FIREBASE_CONFIG = {
     border-radius:99px;padding:1px 8px;margin-left:4px;vertical-align:1px;white-space:nowrap}
   .once-tag{color:var(--accent);background:var(--accent-soft)}
   .back-tag{color:var(--muted);background:#efeff2}
-  .once-note{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:3px 12px;margin:0 0 14px}
-  body.present .once-note{font-size:.95rem}
   .result.once .qtext{box-shadow:inset 4px 0 0 var(--accent);padding-left:12px}
 
   /* discussion steps */
@@ -2085,9 +2082,7 @@ async function teacher(room){
     const nextShape = JSON.stringify([roomData.title || "", hidden, once, qs.map(q => [q.id, q.question, q.options, q.earlier || null])]);
     if (nextShape !== shape) {
       shape = nextShape;
-      box.innerHTML = (once.some(Boolean) ? `<div class="once-note">${once.length > 1 && !once.every(Boolean)
-          ? "Marked questions aren't re-tested · go through them now" : "Not re-tested later · go through now"}</div>` : "")
-        + slideResultsHTML(roomData.title, qs, tallies, hidden);
+      box.innerHTML = slideResultsHTML(roomData.title, qs, tallies, hidden);
       if (qs.length > 1) box.querySelectorAll(".result[data-q]").forEach((r, k) => r.classList.toggle("once", once[k]));
       fitPresent();
       if (!hidden) growBars(box);
