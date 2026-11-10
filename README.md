@@ -148,10 +148,12 @@ D: What does the omnigenic model imply about…   ← a discussion prompt
 - disease prediction and polygenic scores?       ← its sub-questions
 - treatment and drug design?
 IMG: slides/figure.png A title       ← a picture, full screen
+SNP:                                 ← the one-SNP regression demo (below)
 // notes like an answer key are ignored
 ```
 
-The box checks as you type and names any line it can't read. Keep decks
+The box checks as you type and names any line it can't read. Tick **Add at
+the start of the lecture** to put what you paste before everything else. Keep decks
 with answer keys out of this repository, since the site is public.
 
 A **discussion prompt** (`D:`) is a step in the lecture like a question: the
@@ -165,6 +167,18 @@ phones under "Look at the screen" (students can tap it to open it full size).
 The file goes in this repository's `slides/` folder, or use an `https://` link;
 the words after the file name are the step's name in your list. Like everything
 else in the repository, files in `slides/` are public.
+
+**The one-SNP demo** (`SNP:`, optionally followed by a title) is a reminder
+that the R² of regressing a trait on one SNP's genotype is that SNP's
+heritability, h²SNP. The projector shows 200 made-up people's heights against
+how many copies of the allele they carry (0, 1, 2; allele frequency 0.4), with
+the regression line and each genotype's average. An **effect size β** knob
+(0 to 10 cm per copy; presets 0, 0.5, 2, 5 and 10 cm; or <kbd>↑</kbd>
+<kbd>↓</kbd> in steps of 0.5) moves the genotype averages apart. Beside it:
+the sum of squared residuals (around the line), the sum of squares around the
+average, R² = 1 − their ratio, and the same number as 2pq·β² / Var(height).
+The residuals stay the same as β grows; only the total does. **Show
+residuals** draws each person's residual. Phones say "Look at the screen."
 
 ### Slides: several questions at once
 
