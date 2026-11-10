@@ -170,19 +170,26 @@ else in the repository, files in `slides/` are public.
 
 **The one-SNP demo** (`SNP:`, optionally followed by a title) is a reminder
 that the R² of regressing a trait on one SNP's genotype is that SNP's
-heritability, h²SNP. The projector shows 200 made-up people's heights against
-how many copies of the allele they carry (0, 1, 2; allele frequency 0.4), with
-the regression line and each genotype's average. An **effect size β** knob
-(0 to 10 cm per copy; presets 0, 0.5, 2, 5 and 10 cm; or <kbd>↑</kbd>
-<kbd>↓</kbd> in steps of 0.5) moves the genotype averages apart. Beside it:
-the sum of squared residuals (around the line), the sum of squares around the
-average, R² = 1 − their ratio, and the same number as 2pq·β² / Var(height).
-The residuals stay the same as β grows; only the total does. **Show
-residuals** draws each person's residual. Under the plot, the p-value for the
-same effect tested in 200 (the people shown), 1,000, 10,000, 100,000 and
-1 million people, from t² = (N − 2)·R² / (1 − R²); genome-wide significant ones
-(p < 5 × 10⁻⁸) are in maroon. At 0.5 cm, it takes about 100,000 people. Phones
-say "Look at the screen."
+heritability, h²SNP. The projector shows 400 made-up people's heights against
+how many copies of the allele they carry (0, 1, 2), with the regression line
+and each genotype's average. Two knobs:
+
+- **Effect size β**, on a log scale from 0.01 to 10 cm per copy (0 at the far
+  left); presets 0, 0.05, 0.5, 2, 5 and 10 cm; <kbd>↑</kbd> <kbd>↓</kbd> step
+  through round values.
+- **Allele frequency p**, 0.05 to 0.5 in steps of 0.05; <kbd>shift</kbd>
+  <kbd>↑</kbd> <kbd>↓</kbd>. People move between the 0/1/2 columns in exact
+  Hardy–Weinberg proportions, so the genotypes' variance is exactly 2pq.
+
+Beside it: the sum of squared residuals (around the line), the sum of squares
+around the average, R² = 1 − their ratio (with as many decimals as it takes to
+see the two sums differ), and the same number as 2pq·β² / Var(height). The
+residuals never change; only the total does. **Show residuals** draws each
+person's residual. Under the plot, the p-value for the same effect tested in
+400 (the people shown), 1,000, 10,000, 100,000 and 1 million people, from
+t² = (N − 2)·R² / (1 − R²); genome-wide significant ones (p < 5 × 10⁻⁸) are in
+maroon. At 0.5 cm and p = 0.4 it takes about 100,000 people; at 0.05 cm not
+even a million is enough. Phones say "Look at the screen."
 
 ### Slides: several questions at once
 

@@ -183,6 +183,8 @@ window.FIREBASE_CONFIG = {
   .snp-side label{margin:0;font-size:1.6rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
   .snp-side input[type=range]{width:100%;accent-color:var(--accent);height:34px;margin:0}
   .snp-side .plot-read small{font-size:1.05rem;font-weight:600;color:var(--muted)}
+  .snp-knob{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:4px}
+  .snp-side .plot-read{font-size:1.7rem}
   .snp .sdot{fill:var(--accent);fill-opacity:.55}
   .snp .sax text{font-size:18px;fill:var(--muted)}
   .snp .sax .gl{font-size:26px;fill:var(--ink);font-weight:700}
@@ -951,29 +953,59 @@ function gwasPaint(root, g, r2, n){
 // each genotype and their spread is fixed, so turning the knob moves only the effect, and
 // the R² on screen is exactly the formula's.
 const SNP_TITLE = "One SNP: the R² of the regression is its heritability";
-const SNP_P = 0.4, SNP_SD = 7, SNP_MU = 170, SNP_BMAX = 10;
-const SNP_DATA = (() => {
-  const N = 200, q = 1 - SNP_P, counts = [Math.round(q * q * N), Math.round(2 * SNP_P * q * N)];
-  counts.push(N - counts[0] - counts[1]);
+// 400 made-up people. For an allele frequency p that's a multiple of 0.05, 400 people split
+// exactly into Hardy–Weinberg proportions (q², 2pq, p²), so the genotypes' variance is exactly
+// 2pq. Each person keeps a place in line (who carries the allele first as p grows), a sideways
+// jitter, and their own deviation; the deviations are re-centred within each genotype and
+// scaled to a fixed spread, so Σ residual² never changes and the R² on screen is exactly the
+// formula's.
+const SNP_N = 400, SNP_SD = 7, SNP_MU = 170, SNP_BMAX = 10, SNP_PMIN = 0.05, SNP_PMAX = 0.5;
+const SNP_PEOPLE = (() => {
   let seed = 21; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const gauss = () => Math.sqrt(-2 * Math.log(rnd())) * Math.cos(2 * Math.PI * rnd());
-  const people = [];
-  counts.forEach((c, g) => {
-    const e = Array.from({ length: c }, gauss), m = e.reduce((a, v) => a + v, 0) / c;
-    e.forEach(v => people.push({ g, e: v - m, j: (rnd() - 0.5) * 0.4 }));
-  });
-  const sd = Math.sqrt(people.reduce((a, x) => a + x.e * x.e, 0) / N);
-  people.forEach(x => (x.e *= SNP_SD / sd));
-  const mg = people.reduce((a, x) => a + x.g, 0) / N;
-  const vg = people.reduce((a, x) => a + (x.g - mg) ** 2, 0) / N;
-  return { people, mg, vg };
+  return Array.from({ length: SNP_N }, () => ({ z: gauss(), j: (rnd() - 0.5) * 0.4 }));
 })();
-const snpY = (x, beta) => SNP_MU + beta * (x.g - SNP_DATA.mg) + x.e;
-const snpR2 = beta => beta * beta * SNP_DATA.vg / (beta * beta * SNP_DATA.vg + SNP_SD * SNP_SD);
+const snpCache = new Map();
+function snpAt(p){
+  const key = p.toFixed(2);
+  if (snpCache.has(key)) return snpCache.get(key);
+  const q = 1 - p, n2 = Math.round(p * p * SNP_N), n1 = Math.round(2 * p * q * SNP_N);
+  const g = SNP_PEOPLE.map((_, i) => i >= SNP_N - n2 ? 2 : i >= SNP_N - n2 - n1 ? 1 : 0);
+  const e = SNP_PEOPLE.map(x => x.z);
+  [0, 1, 2].forEach(k => {
+    const idx = g.map((v, i) => v === k ? i : -1).filter(i => i >= 0);
+    if (!idx.length) return;
+    const m = idx.reduce((t, i) => t + e[i], 0) / idx.length;
+    idx.forEach(i => (e[i] -= m));
+  });
+  const sd = Math.sqrt(e.reduce((t, v) => t + v * v, 0) / SNP_N);
+  e.forEach((v, i) => (e[i] = v * SNP_SD / sd));
+  const mg = g.reduce((t, v) => t + v, 0) / SNP_N, vg = g.reduce((t, v) => t + (v - mg) ** 2, 0) / SNP_N;
+  const d = { p, g, e, mg, vg };
+  snpCache.set(key, d);
+  return d;
+}
+const snpY = (d, i, beta) => SNP_MU + beta * (d.g[i] - d.mg) + d.e[i];
+// The effect-size knob is on a log scale, 0.01 to 10 cm per copy, with 0 at the far left, so
+// the tiny effects of real height SNPs are reachable. ↑ ↓ step through round values.
+const SNP_BLO = -2, SNP_BPOS = 1000;
+const betaAt = pos => pos <= 0 ? 0 : 10 ** (SNP_BLO + (Math.log10(SNP_BMAX) - SNP_BLO) * pos / SNP_BPOS);
+const posAt = b => b <= 0 ? 0 : Math.max(1, Math.min(SNP_BPOS, Math.round((Math.log10(b) - SNP_BLO) / (Math.log10(SNP_BMAX) - SNP_BLO) * SNP_BPOS)));
+const SNP_STEPS = [0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const fmtB = b => b === 0 ? "0" : b >= 1 ? b.toFixed(1) : String(Number(b.toPrecision(2)));
+function fmtSmall(v){             // R² and the like: 0.038, 0.20, or 2.4 × 10⁻⁵ when tiny
+  if (v === 0) return "0";
+  if (v >= 0.1) return v.toFixed(2);
+  if (v >= 0.001) return v.toFixed(3);
+  let e = Math.floor(Math.log10(v)), m = v / 10 ** e;
+  if (m >= 9.95) { m = 1; e += 1; }
+  return `${m.toFixed(1)} × 10<sup>${String(e).replace("-", "−")}</sup>`;
+}
+const snpR2 = (d, beta) => beta * beta * d.vg / (beta * beta * d.vg + SNP_SD * SNP_SD);
 // The same effect tested in samples of different sizes: t² = (N − 2)·R² / (1 − R²), and a
 // two-sided p-value. Worked in logs (Numerical Recipes' erfc, relative error under 1.2e-7) so
 // that p-values far smaller than a computer can hold, like 10^-5000, still come out right.
-const SNP_NS = [200, 1000, 10000, 100000, 1000000], GW_LOG10 = Math.log10(5e-8);
+const SNP_NS = [SNP_N, 1000, 10000, 100000, 1000000], GW_LOG10 = Math.log10(5e-8);
 function log10P(z){
   const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.5 * x);
   const ln = Math.log(t) - x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
@@ -989,7 +1021,9 @@ function fmtP(l){
 
 function snpHTML(title){
   const W = 900, H = 520, L = 78, R = 24, T = 16, B = 78;
-  const ys = [0, SNP_BMAX].flatMap(b => SNP_DATA.people.map(x => snpY(x, b)));
+  // One fixed height axis for every setting of both knobs.
+  const ys = [];
+  for (let k = 1; k <= 10; k++) { const d = snpAt(k / 20); [0, SNP_BMAX].forEach(b => d.g.forEach((_, i) => ys.push(snpY(d, i, b)))); }
   const lo = Math.floor((Math.min(...ys) - 2) / 10) * 10, hi = Math.ceil((Math.max(...ys) + 2) / 10) * 10;
   const gx = g => L + (g + 0.6) / 3.2 * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
   const ticks = []; for (let v = lo; v <= hi; v += 10) ticks.push(v);
@@ -999,39 +1033,41 @@ function snpHTML(title){
     <div class="snp" id="snp">
       <div class="snp-main">
         <div class="snp-left">
-        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Height of 200 people against how many copies of the allele they carry, with the regression line">
+        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Height of ${SNP_N} people against how many copies of the allele they carry, with the regression line">
           <g class="sax">
             ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v)}" y2="${py(v)}"/><text x="${L - 12}" y="${py(v) + 6}" text-anchor="end">${v}</text>`).join("")}
             ${[0, 1, 2].map(g => `<text class="gl" x="${gx(g)}" y="${H - B + 34}" text-anchor="middle">${g}</text>`).join("")}
             <text class="lbl" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">Copies of the height-increasing allele</text>
             <text class="lbl" transform="translate(20 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Height (cm)</text>
           </g>
-          <g>${SNP_DATA.people.map(x => `<line class="sres" x1="${gx(x.g + x.j).toFixed(1)}" x2="${gx(x.g + x.j).toFixed(1)}"/>`).join("")}</g>
-          <g>${SNP_DATA.people.map(x => `<circle class="sdot" r="5" cx="${gx(x.g + x.j).toFixed(1)}"/>`).join("")}</g>
+          <g>${SNP_PEOPLE.map(() => `<line class="sres"/>`).join("")}</g>
+          <g>${SNP_PEOPLE.map(() => `<circle class="sdot" r="4.5"/>`).join("")}</g>
           <line class="sfit"/>
           ${[0, 1, 2].map(g => `<line class="smean" data-g="${g}"/>`).join("")}
           <line class="sfitkey" x1="${L + 14}" x2="${L + 50}" y1="${T + 18}" y2="${T + 18}"/>
           <text class="sfitlbl" x="${L + 60}" y="${T + 25}"></text>
         </svg>
         <table class="snp-p">
-          <tr><th>People tested</th>${SNP_NS.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_DATA.people.length ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
+          <tr><th>People tested</th>${SNP_NS.map(n => `<td>${n.toLocaleString("en-US")}${n === SNP_N ? " <small>(these)</small>" : ""}</td>`).join("")}</tr>
           <tr class="pv"><th>p-value</th>${SNP_NS.map(n => `<td data-n="${n}"></td>`).join("")}</tr>
         </table>
         <p class="snp-pnote">The same effect, tested in more people: t² = (N − 2)·R² / (1 − R²).
           <span style="color:var(--accent);font-weight:700">In maroon:</span> genome-wide significant, p &lt; 5 × 10<sup>−8</sup>.</p>
         </div>
         <div class="snp-side">
-          <label for="beta">Effect size β</label>
-          <input type="range" id="beta" min="0" max="${SNP_BMAX}" step="0.1" value="2">
-          <span class="plot-read" id="bread"></span>
+          <div class="snp-knob"><label for="beta">Effect size β</label><span class="plot-read" id="bread"></span></div>
+          <input type="range" id="beta" min="0" max="${SNP_BPOS}" step="1" value="${posAt(2)}">
           <div class="plot-presets">
             <button class="small ghost" data-b="0">0</button>
+            <button class="small ghost" data-b="0.05">0.05 cm</button>
             <button class="small ghost" data-b="0.5">0.5 cm · about the biggest common height SNPs</button>
             <button class="small ghost" data-b="2">2 cm</button>
             <button class="small ghost" data-b="5">5 cm</button>
             <button class="small ghost" data-b="10">10 cm</button>
-            <button class="small ghost" id="sresbtn">Show residuals</button>
           </div>
+          <div class="snp-knob"><label for="maf">Allele frequency p</label><span class="plot-read" id="mread"></span></div>
+          <input type="range" id="maf" min="${SNP_PMIN}" max="${SNP_PMAX}" step="0.05" value="0.4">
+          <div class="plot-presets"><button class="small ghost" id="sresbtn">Show residuals</button></div>
           <div class="snp-ss">
             <div><span>Σ residual²<small>spread around the line</small></span><b id="ssres"></b></div>
             <div><span>Σ (height − average)²<small>spread around the average</small></span><b id="sstot"></b></div>
@@ -1045,30 +1081,36 @@ function snpHTML(title){
     </div>` };
 }
 
-function snpPaint(root, g, beta){
-  const ys = SNP_DATA.people.map(x => snpY(x, beta));
-  root.querySelectorAll(".sdot").forEach((c, i) => c.setAttribute("cy", g.py(ys[i]).toFixed(1)));
-  const mean = gg => SNP_MU + beta * (gg - SNP_DATA.mg);
+function snpPaint(root, g, beta, p){
+  const d = snpAt(p), ys = d.g.map((_, i) => snpY(d, i, beta));
+  const mean = gg => SNP_MU + beta * (gg - d.mg);
+  const xs = d.g.map((gg, i) => g.gx(gg + SNP_PEOPLE[i].j).toFixed(1));
+  root.querySelectorAll(".sdot").forEach((c, i) => { c.setAttribute("cx", xs[i]); c.setAttribute("cy", g.py(ys[i]).toFixed(1)); });
   // each person's residual: from their dot to the line at their genotype
   root.querySelectorAll(".sres").forEach((l, i) => {
-    l.setAttribute("y1", g.py(ys[i]).toFixed(1)); l.setAttribute("y2", g.py(mean(SNP_DATA.people[i].g)).toFixed(1));
+    l.setAttribute("x1", xs[i]); l.setAttribute("x2", xs[i]);
+    l.setAttribute("y1", g.py(ys[i]).toFixed(1)); l.setAttribute("y2", g.py(mean(d.g[i])).toFixed(1));
   });
+  const present = [0, 1, 2].map(k => d.g.includes(k));
   root.querySelectorAll(".smean").forEach(l => {
     const gg = +l.dataset.g, y = g.py(mean(gg)).toFixed(1);
     l.setAttribute("x1", g.gx(gg - 0.24).toFixed(1)); l.setAttribute("x2", g.gx(gg + 0.24).toFixed(1));
     l.setAttribute("y1", y); l.setAttribute("y2", y);
+    l.setAttribute("visibility", present[gg] ? "visible" : "hidden");
   });
   const fit = root.querySelector(".sfit");
   fit.setAttribute("x1", g.gx(-0.45).toFixed(1)); fit.setAttribute("y1", g.py(mean(-0.45)).toFixed(1));
   fit.setAttribute("x2", g.gx(2.45).toFixed(1)); fit.setAttribute("y2", g.py(mean(2.45)).toFixed(1));
-  root.querySelector(".sfitlbl").textContent = `regression line: slope β = ${beta.toFixed(1)} cm per copy`;
-  const r2 = snpR2(beta), v = beta * beta * SNP_DATA.vg + SNP_SD * SNP_SD;
-  const f = r2 === 0 ? "0" : r2 < 0.1 ? r2.toFixed(3) : r2.toFixed(2);
+  root.querySelector(".sfitlbl").textContent = `regression line: slope β = ${fmtB(beta)} cm per copy`;
+  const r2 = snpR2(d, beta), v = beta * beta * d.vg + SNP_SD * SNP_SD;
+  const f = fmtSmall(r2);
   // Sums of squares from the people on screen: around the line, and around the average.
-  const avg = ys.reduce((a, y) => a + y, 0) / ys.length;
-  const ssRes = ys.reduce((a, y, i) => a + (y - mean(SNP_DATA.people[i].g)) ** 2, 0);
-  const ssTot = ys.reduce((a, y) => a + (y - avg) ** 2, 0);
-  const n0 = x => Math.round(x).toLocaleString("en-US");
+  const avg = ys.reduce((t, y) => t + y, 0) / ys.length;
+  const ssRes = ys.reduce((t, y, i) => t + (y - mean(d.g[i])) ** 2, 0);
+  const ssTot = ys.reduce((t, y) => t + (y - avg) ** 2, 0);
+  // As many decimals as it takes to see the two sums differ (none once they differ by 1 or more).
+  const gap = ssTot - ssRes, dec = gap <= 0 ? 0 : Math.max(0, Math.min(4, Math.ceil(-Math.log10(gap)) + 1));
+  const n0 = x => x.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   root.querySelector("#ssres").textContent = n0(ssRes);
   root.querySelector("#sstot").textContent = n0(ssTot);
   root.querySelector("#sq").textContent = `R² = 1 − ${n0(ssRes)} / ${n0(ssTot)} =`;
@@ -1077,15 +1119,17 @@ function snpPaint(root, g, beta){
     td.innerHTML = fmtP(l);
     td.classList.toggle("sig", l < GW_LOG10);
   });
-  root.querySelector("#bread").innerHTML = `${beta.toFixed(1)} <small>cm per copy</small>`;
-  root.querySelector("#beta").value = beta.toFixed(1);
-  root.querySelector("#sr2").textContent = f;
+  root.querySelector("#bread").innerHTML = `${fmtB(beta)} <small>cm per copy</small>`;
+  root.querySelector("#beta").value = posAt(beta);
+  root.querySelector("#mread").textContent = p.toFixed(2);
+  root.querySelector("#maf").value = p.toFixed(2);
+  root.querySelector("#sr2").innerHTML = f;
   root.querySelector("#sbar").style.width = (r2 * 100).toFixed(2) + "%";
-  const q = (1 - SNP_P).toFixed(1);
   root.querySelector("#sform").innerHTML = `<b>= h²<sub>SNP</sub> = 2pq·β² / Var(height)</b><br>
-    = 2 × ${SNP_P} × ${q} × ${beta.toFixed(1)}² / ${v.toFixed(1)} = ${f}<br>
-    <span class="muted">p = ${SNP_P} (allele frequency) · Var(height) = Σ (height − average)² / ${SNP_DATA.people.length}</span>`;
-  root.querySelectorAll(".plot-presets [data-b]").forEach(b => b.classList.toggle("on", Math.abs(+b.dataset.b - beta) < 0.05));
+    = 2 × ${p.toFixed(2)} × ${(1 - p).toFixed(2)} × ${fmtB(beta)}² / ${v.toFixed(dec ? 4 : 1)} = ${f}<br>
+    <span class="muted">Var(height) = Σ (height − average)² / ${SNP_N}</span>`;
+  root.querySelectorAll(".plot-presets [data-b]").forEach(b => b.classList.toggle("on",
+    +b.dataset.b === 0 ? beta === 0 : beta > 0 && Math.abs(Math.log10(+b.dataset.b / beta)) < 0.01));
 }
 
 function figureHTML(src, title){
@@ -1905,8 +1949,8 @@ async function teacher(room){
     fitPresent();
   }
 
-  // The one-SNP demo. The knob is yours, on screen only: drag it, click a preset, or press
-  // ↑ ↓ to change the effect by 0.5 cm.
+  // The one-SNP demo. The knobs are yours, on screen only: drag them, click a preset, or
+  // press ↑ ↓ to change the effect by 0.5 cm and shift ↑ ↓ the allele frequency by 0.05.
   function drawSnp(box, cur){
     const sg = JSON.stringify(["snp", cur.id, cur.s.title]);
     if (sg === shape) return;
@@ -1915,8 +1959,12 @@ async function teacher(room){
     const { html, geom } = snpHTML(cur.s.title);
     cancelAnimationFrame(box.__snpRaf || 0);
     box.innerHTML = html;
-    let beta = 2;
-    const slider = box.querySelector("#beta"), paint = () => snpPaint(box, geom, beta);
+    let beta = 2, p = 0.4;
+    const slider = box.querySelector("#beta"), paint = () => snpPaint(box, geom, beta, p);
+    const maf = box.querySelector("#maf");
+    const setP = v => { p = Math.min(SNP_PMAX, Math.max(SNP_PMIN, Math.round(v * 20) / 20)); paint(); };
+    maf.oninput = () => setP(+maf.value);
+    maf.onchange = () => maf.blur();
     const glide = to => {
       cancelAnimationFrame(box.__snpRaf || 0);
       const from = beta, t0 = performance.now(), ms = 450;
@@ -1930,15 +1978,20 @@ async function teacher(room){
       };
       box.__snpRaf = requestAnimationFrame(frame);
     };
-    slider.oninput = () => { cancelAnimationFrame(box.__snpRaf || 0); beta = +slider.value; paint(); };
+    slider.oninput = () => { cancelAnimationFrame(box.__snpRaf || 0); beta = betaAt(+slider.value); paint(); };
     slider.onchange = () => slider.blur();
     box.querySelectorAll(".plot-presets [data-b]").forEach(b => b.onclick = () => glide(+b.dataset.b));
     box.querySelector("#sresbtn").onclick = e => {
       const on = box.querySelector("#snp").classList.toggle("resid");
       e.target.textContent = on ? "Hide residuals" : "Show residuals";
     };
-    box.__nudge = step => { const to = Math.min(SNP_BMAX, Math.max(0, Math.round((beta + Math.sign(step) * 0.5) * 10) / 10)); beta = to; paint(); };
-    box.__nudgeN = null;
+    box.__nudge = step => {
+      cancelAnimationFrame(box.__snpRaf || 0);
+      beta = step > 0 ? (SNP_STEPS.find(v => v > beta + 1e-9) ?? SNP_BMAX)
+                      : ([...SNP_STEPS].reverse().find(v => v < beta - 1e-9) ?? 0);
+      paint();
+    };
+    box.__nudgeN = dir => setP(p + dir * 0.05);
     paint();
     fitPresent();
   }
