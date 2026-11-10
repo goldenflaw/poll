@@ -108,8 +108,9 @@ a new code.
 ### During class
 
 1. Put the QR code up while students settle in — tell them once to leave the
-   tab open. Click **Present** for the projector view; a small QR stays in the
-   corner the whole time so anyone who drops out can rejoin silently.
+   tab open. Click **Present** for the projector view; the browser goes full
+   screen (no tabs or address bar), and <kbd>Esc</kbd> leaves both. A small QR
+   stays in the corner the whole time so anyone who drops out can rejoin silently.
 2. Hit **Show** on a question (or <kbd>→</kbd>) to push it to their phones.
    Voting opens automatically.
 3. Results stay hidden, so nobody is swayed by the room: the projector and

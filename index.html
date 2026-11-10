@@ -405,10 +405,26 @@ const SDK  = "https://www.gstatic.com/firebasejs/10.12.2/";
 const LETTERS = "ABCDEFGHIJKLMNOP";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+// Present mode also asks the browser for real full screen (no tabs, no address bar). The
+// browser handles Esc itself while full screen, and leaving full screen leaves present mode.
+let fullByPresent = false;
 window.setPresent = on => {
   document.body.classList.toggle("present", !!on);
   document.dispatchEvent(new Event("presentchange"));
+  const el = document.documentElement;
+  if (on && !document.fullscreenElement && el.requestFullscreen) {
+    el.requestFullscreen({ navigationUI: "hide" }).then(() => { fullByPresent = true; }).catch(() => {});
+  } else if (!on && fullByPresent && document.fullscreenElement && document.exitFullscreen) {
+    fullByPresent = false;
+    document.exitFullscreen().catch(() => {});
+  }
 };
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && fullByPresent) {
+    fullByPresent = false;
+    if (document.body.classList.contains("present")) setPresent(false);
+  }
+});
 function fatal(title, detail){ app.innerHTML = `<h1>${title}</h1><p class="sub">${detail}</p>`; }
 
 /* ---------- guard: config not filled in ---------- */
