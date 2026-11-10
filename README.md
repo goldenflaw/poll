@@ -177,9 +177,13 @@ and each genotype's average. Two knobs:
 - **Effect size β**, on a log scale from 0.01 to 10 cm per copy (0 at the far
   left); presets 0, 0.05, 0.5, 2, 5 and 10 cm; <kbd>↑</kbd> <kbd>↓</kbd> step
   through round values.
-- **Allele frequency p**, 0.05 to 0.5 in steps of 0.05; <kbd>shift</kbd>
-  <kbd>↑</kbd> <kbd>↓</kbd>. People move between the 0/1/2 columns in exact
-  Hardy–Weinberg proportions, so the genotypes' variance is exactly 2pq.
+- **Allele frequency p**: 1 in 1,000, 1 in 500, 1 in 200, 1 in 100, 1 in 50,
+  then 0.05 to 0.5 in steps of 0.05; <kbd>shift</kbd> <kbd>↑</kbd> <kbd>↓</kbd>.
+  People move between the 0/1/2 columns. The numbers are for the exact
+  frequency (genotype variance exactly 2pq). From 0.05 up, 400 people split
+  into Hardy–Weinberg proportions exactly, so the dots give the same numbers;
+  rarer alleles show the nearest whole number of carriers (one person at
+  1 in 1,000), drawn as bigger dots so they stand out.
 
 Beside it: the sum of squared residuals (around the line), the sum of squares
 around the average, R² = 1 − their ratio (with as many decimals as it takes to
