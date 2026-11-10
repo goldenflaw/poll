@@ -248,7 +248,10 @@ and each question is limited to 500 characters.
 
 The *Activity* panel in the console hands every student a celebrity's
 genotypes at 18 height-associated SNPs, to compute a polygenic score by hand
-(sum of β × copies of the effect allele).
+(sum of β × copies of the effect allele, with β in cm per copy) and from it a
+predicted height: the average height of the celebrities, 170.5 cm, plus the
+score. Scores average zero, so predicted heights come out around 170 cm
+(153 to 186 cm); a negative score means shorter than average.
 
 1. Paste the class list, one name per line, and click **Deal out
    celebrities**. Each student gets a different celebrity until all of them
@@ -260,17 +263,20 @@ genotypes at 18 height-associated SNPs, to compute a polygenic score by hand
 3. Showing any poll (or **Back to polls**) returns phones to polling.
 
 *Who has which celebrity, and the answers* (collapsed, console only) lists
-each student's correct score. **Deal again** reshuffles. The SNPs and
-genotypes live in `prs-height.js`. The genotypes are made up for teaching, and
-the effects are adjusted so the score explains 40% of the variation in the
-celebrities' reported heights; some are negative, as in real GWAS results, and
-the spreadsheet's originals are kept as `beta_gwas`. With fewer students than
+each student's correct score and predicted height. **Deal again** reshuffles.
+The SNPs and genotypes live in `prs-height.js`. The genotypes are made up for
+teaching, and the effects are adjusted so the score explains 40% of the
+variation in the celebrities' reported heights, and scaled so that average +
+score is the best prediction of them; some are negative, as in real GWAS
+results, and the spreadsheet's originals are kept as `beta_gwas`. For two SNPs
+(rs12640250, rs117246932) the effect allele is the spreadsheet's other allele,
+which shifts every score by the same amount so that they average zero. With fewer students than
 celebrities, dealing leaves out the ones that keep the class's R² at 0.40.
 
 **Show prediction plot** puts the class's celebrities on the screen: each
 one's reported height up the side (the `height` values in `prs-height.js`,
 approximate), and their height as predicted from the polygenic score across.
-It opens on **Our 18 SNPs**, the prediction from the scores students computed,
+It opens on **Our 18 SNPs**, each dot at the height its student computed,
 the same shape as score-against-height on the board. The **R²** knob changes
 how good the score is; people's heights never move, only the predictions:
 at 1 every prediction is exactly right (the dashed diagonal), at 0 the score

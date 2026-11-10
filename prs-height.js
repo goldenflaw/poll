@@ -1,11 +1,17 @@
 // Height polygenic score activity. 18 height-associated SNPs, with the effect (beta) of
 // each copy of the effect allele, and each celebrity's genotype as the number of copies of
 // the effect allele they carry (0, 1 or 2). The genotypes are made up for teaching.
-// `beta` is what students see. It was adjusted for teaching so that the score explains 40%
-// of the variation in these celebrities' reported heights (some effects are negative, as in
-// real GWAS results); `beta_gwas` keeps the original effect from the spreadsheet.
+// A celebrity's polygenic score is the sum over the 18 SNPs of beta × copies, and their
+// predicted height is the average height of the celebrities (170.5 cm) plus the score.
+// `beta` (cm per copy) is what students see. It was adjusted for teaching so that the score
+// explains 40% of the variation in these celebrities' reported heights (some effects are
+// negative, as in real GWAS results), and scaled so that average + score is the best
+// prediction of the reported heights. For rs12640250 and rs117246932 the effect allele is
+// the spreadsheet's other allele (beta and beta_gwas change sign, copies become 2 − copies),
+// so that the scores average zero: the same scores, shifted by a constant.
+// `beta_gwas` keeps the original effect from the spreadsheet.
 // `height` is each celebrity's publicly reported height in cm (approximate; edit freely),
-// used by the prediction plot. Extracted from PRS_height_2025.xlsx.
+// used by the prediction plot and for the average. Extracted from PRS_height_2025.xlsx.
 window.PRS_HEIGHT = {
  "snps": [
   {
@@ -15,7 +21,7 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 3.908692e-14,
-   "beta": 0.0244,
+   "beta": 0.98,
    "beta_gwas": 0.04449999
   },
   {
@@ -25,7 +31,7 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "C",
    "p": 1.363045e-09,
-   "beta": -0.0316,
+   "beta": -1.28,
    "beta_gwas": 0.03713898
   },
   {
@@ -35,7 +41,7 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 6.530432e-10,
-   "beta": 0.0524,
+   "beta": 2.11,
    "beta_gwas": 0.03672572
   },
   {
@@ -45,7 +51,7 @@ window.PRS_HEIGHT = {
    "other": "C",
    "effect": "T",
    "p": 1.921549e-10,
-   "beta": -0.0182,
+   "beta": -0.73,
    "beta_gwas": 0.04459364
   },
   {
@@ -55,18 +61,18 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 3.252486e-08,
-   "beta": -0.0168,
+   "beta": -0.68,
    "beta_gwas": 0.03273917
   },
   {
    "id": "rs12640250",
    "chr": 4,
    "bp": 17792869,
-   "other": "C",
-   "effect": "A",
+   "other": "A",
+   "effect": "C",
    "p": 1.990183e-17,
-   "beta": 0.1081,
-   "beta_gwas": 0.05094203
+   "beta": -4.36,
+   "beta_gwas": -0.05094203
   },
   {
    "id": "rs10018984",
@@ -75,7 +81,7 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 8.46803e-12,
-   "beta": 0.0225,
+   "beta": 0.91,
    "beta_gwas": 0.05979208
   },
   {
@@ -85,7 +91,7 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "C",
    "p": 1.462991e-08,
-   "beta": 0.0269,
+   "beta": 1.09,
    "beta_gwas": 0.03236858
   },
   {
@@ -95,18 +101,18 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 2.889597e-13,
-   "beta": -0.017,
+   "beta": -0.69,
    "beta_gwas": 0.04995829
   },
   {
    "id": "rs117246932",
    "chr": 7,
    "bp": 19601997,
-   "other": "C",
-   "effect": "T",
+   "other": "T",
+   "effect": "C",
    "p": 6.314341e-09,
-   "beta": 0.0736,
-   "beta_gwas": 0.09220777
+   "beta": -2.97,
+   "beta_gwas": -0.09220777
   },
   {
    "id": "rs1990354",
@@ -115,7 +121,7 @@ window.PRS_HEIGHT = {
    "other": "A",
    "effect": "G",
    "p": 5.314523e-08,
-   "beta": -0.0721,
+   "beta": -2.91,
    "beta_gwas": 0.04068125
   },
   {
@@ -125,7 +131,7 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "A",
    "p": 6.3318e-10,
-   "beta": 0.0679,
+   "beta": 2.74,
    "beta_gwas": 0.04018437
   },
   {
@@ -135,7 +141,7 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 1.812044e-08,
-   "beta": -0.01,
+   "beta": -0.4,
    "beta_gwas": 0.03903191
   },
   {
@@ -145,7 +151,7 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "G",
    "p": 1.316986e-09,
-   "beta": 0.0487,
+   "beta": 1.97,
    "beta_gwas": 0.03845693
   },
   {
@@ -155,7 +161,7 @@ window.PRS_HEIGHT = {
    "other": "A",
    "effect": "C",
    "p": 8.918726e-11,
-   "beta": 0.0491,
+   "beta": 1.98,
    "beta_gwas": 0.0434479
   },
   {
@@ -165,7 +171,7 @@ window.PRS_HEIGHT = {
    "other": "C",
    "effect": "G",
    "p": 3.85057e-14,
-   "beta": 0.0118,
+   "beta": 0.48,
    "beta_gwas": 0.05618174
   },
   {
@@ -175,7 +181,7 @@ window.PRS_HEIGHT = {
    "other": "G",
    "effect": "A",
    "p": 2.306639e-08,
-   "beta": 0.029,
+   "beta": 1.17,
    "beta_gwas": 0.03496564
   },
   {
@@ -185,7 +191,7 @@ window.PRS_HEIGHT = {
    "other": "T",
    "effect": "C",
    "p": 2.304908e-10,
-   "beta": 0.0267,
+   "beta": 1.08,
    "beta_gwas": 0.03777191
   }
  ],
@@ -198,11 +204,11 @@ window.PRS_HEIGHT = {
     0,
     2,
     2,
-    0,
+    2,
     0,
     1,
     1,
-    0,
+    2,
     0,
     0,
     1,
@@ -226,7 +232,7 @@ window.PRS_HEIGHT = {
     0,
     2,
     0,
-    0,
+    2,
     2,
     0,
     0,
@@ -246,7 +252,7 @@ window.PRS_HEIGHT = {
     2,
     0,
     1,
-    0,
+    2,
     0,
     2,
     0,
@@ -270,11 +276,11 @@ window.PRS_HEIGHT = {
     0,
     0,
     0,
+    2,
     0,
     0,
     0,
-    0,
-    0,
+    2,
     1,
     0,
     0,
@@ -294,11 +300,11 @@ window.PRS_HEIGHT = {
     0,
     2,
     0,
-    0,
+    2,
     1,
     0,
     2,
-    2,
+    0,
     0,
     0,
     0,
@@ -322,7 +328,7 @@ window.PRS_HEIGHT = {
     0,
     0,
     2,
-    2,
+    0,
     1,
     0,
     2,
@@ -342,11 +348,11 @@ window.PRS_HEIGHT = {
     1,
     2,
     1,
-    0,
+    2,
     2,
     2,
     1,
-    0,
+    2,
     2,
     2,
     1,
@@ -394,7 +400,7 @@ window.PRS_HEIGHT = {
     2,
     0,
     0,
-    2,
+    0,
     1,
     1,
     0,
@@ -418,7 +424,7 @@ window.PRS_HEIGHT = {
     2,
     0,
     0,
-    0,
+    2,
     2,
     0,
     0,
@@ -438,11 +444,11 @@ window.PRS_HEIGHT = {
     1,
     2,
     2,
-    0,
+    2,
     1,
     2,
     2,
-    0,
+    2,
     1,
     1,
     0,
@@ -462,11 +468,11 @@ window.PRS_HEIGHT = {
     2,
     2,
     2,
+    0,
     2,
     2,
     2,
-    2,
-    2,
+    0,
     2,
     2,
     2,
@@ -486,7 +492,7 @@ window.PRS_HEIGHT = {
     2,
     0,
     2,
-    2,
+    0,
     2,
     2,
     0,
@@ -510,7 +516,7 @@ window.PRS_HEIGHT = {
     0,
     0,
     2,
-    2,
+    0,
     0,
     1,
     2,
@@ -534,11 +540,11 @@ window.PRS_HEIGHT = {
     0,
     1,
     1,
-    2,
-    2,
-    1,
-    1,
     0,
+    2,
+    1,
+    1,
+    2,
     1,
     0,
     2,
@@ -558,7 +564,7 @@ window.PRS_HEIGHT = {
     2,
     2,
     1,
-    0,
+    2,
     2,
     0,
     1,
@@ -586,7 +592,7 @@ window.PRS_HEIGHT = {
     0,
     0,
     0,
-    2,
+    0,
     2,
     2,
     2,
@@ -610,7 +616,7 @@ window.PRS_HEIGHT = {
     2,
     2,
     2,
-    2,
+    0,
     2,
     2,
     1,
@@ -630,11 +636,11 @@ window.PRS_HEIGHT = {
     0,
     0,
     0,
-    2,
+    0,
     2,
     1,
     1,
-    2,
+    0,
     0,
     1,
     1,
@@ -654,11 +660,11 @@ window.PRS_HEIGHT = {
     0,
     2,
     2,
-    0,
     2,
     2,
+    2,
     0,
-    0,
+    2,
     0,
     2,
     0,
@@ -678,11 +684,11 @@ window.PRS_HEIGHT = {
     1,
     1,
     2,
-    0,
+    2,
     1,
     2,
     2,
-    2,
+    0,
     0,
     2,
     2,
@@ -702,11 +708,11 @@ window.PRS_HEIGHT = {
     1,
     2,
     1,
-    2,
+    0,
     0,
     1,
     1,
-    2,
+    0,
     1,
     2,
     0,
@@ -726,11 +732,11 @@ window.PRS_HEIGHT = {
     1,
     2,
     2,
-    0,
+    2,
     2,
     2,
     1,
-    2,
+    0,
     2,
     2,
     1,
@@ -754,7 +760,7 @@ window.PRS_HEIGHT = {
     0,
     2,
     0,
-    2,
+    0,
     0,
     1,
     1,
@@ -774,7 +780,7 @@ window.PRS_HEIGHT = {
     1,
     1,
     0,
-    2,
+    0,
     1,
     0,
     1,
@@ -798,11 +804,11 @@ window.PRS_HEIGHT = {
     1,
     2,
     0,
-    0,
+    2,
     1,
     2,
     1,
-    0,
+    2,
     1,
     1,
     0,
