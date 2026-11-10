@@ -147,6 +147,7 @@ Q: Every mutation in a Mendelian disease gene causes the disease.
 D: What does the omnigenic model imply about…   ← a discussion prompt
 - disease prediction and polygenic scores?       ← its sub-questions
 - treatment and drug design?
+IMG: slides/figure.png A title       ← a picture, full screen
 // notes like an answer key are ignored
 ```
 
@@ -157,6 +158,13 @@ A **discussion prompt** (`D:`) is a step in the lecture like a question: the
 prompt and its sub-questions appear large on the projector and on every phone
 ("Talk it over with the people around you"), with no voting. <kbd>→</kbd> moves
 on to the next step and phones go back to polling.
+
+An **image** (`IMG:`) is a step too. `IMG: slides/height-gwas-signals.png Bigger
+GWAS find more signals` puts the picture full screen on the projector, and on
+phones under "Look at the screen" (students can tap it to open it full size).
+The file goes in this repository's `slides/` folder, or use an `https://` link;
+the words after the file name are the step's name in your list. Like everything
+else in the repository, files in `slides/` are public.
 
 ### Slides: several questions at once
 

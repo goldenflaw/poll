@@ -166,6 +166,12 @@ window.FIREBASE_CONFIG = {
   .back-tag{color:var(--muted);background:#efeff2}
   .result.once .qtext{box-shadow:inset 4px 0 0 var(--accent);padding-left:12px}
 
+  /* image steps */
+  .fig{margin:0}
+  .fig img{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:6px;background:#fff}
+  body.present .fig img{max-height:calc(100vh - 48px)}
+  .qitem .thumb{display:block;width:150px;max-width:100%;margin-top:8px;border:1px solid var(--line);border-radius:4px;background:#fff}
+
   /* discussion steps */
   .disc-q{margin-bottom:18px}
   ul.disc{margin:0;padding-left:1.3em;display:grid;gap:12px;font-size:1.15rem;max-width:70ch}
@@ -520,6 +526,9 @@ function slideResultsHTML(title, qs, tallies, hidden){
                        question with that exact wording, to revisit it
    // a note           ignored, so a deck can carry an answer key
 ---------------------------------------------------------------------- */
+// An image is a file on this site (slides/figure.png) or an https:// link, nothing else.
+const safeSrc = src => typeof src === "string" && src.length < 500 &&
+  (/^https:\/\/[^\s"'<>]+$/i.test(src) || /^(?!\/)(?!.*\.\.)[\w\-./]+\.(png|jpe?g|gif|svg|webp)$/i.test(src));
 const sameText = (a, b) => a.trim().toLowerCase().replace(/\s+/g, " ") === b.trim().toLowerCase().replace(/\s+/g, " ");
 function parseDeck(text, existing){
   const items = [], errors = [], fresh = [];
@@ -554,6 +563,12 @@ function parseDeck(text, existing){
     }
     if (disc && /^[-*•]\s*/.test(line)) { disc.points.push(line.replace(/^[-*•]\s*/, "").slice(0, 300)); return; }
     disc = null;
+    if ((m = line.match(/^IMG\s*[:.)]\s*(\S+)(?:\s+(.+))?$/i))) {
+      finishQ(); finishSlide();
+      if (!safeSrc(m[1])) errors.push(`Line ${n}: an image must be a file on the site (like slides/figure.png) or an https:// link.`);
+      items.push({ kind: "i", src: m[1], title: (m[2] || "").trim().slice(0, 299), line: n });
+      return;
+    }
     if (line.startsWith("#")) {
       finishQ(); finishSlide();
       slide = { kind: "s", title: line.replace(/^#+\s*/, "").slice(0, 299), qs: [], line: n };
@@ -569,13 +584,14 @@ function parseDeck(text, existing){
       if (q) q.options.push(m[1].trim());
       else errors.push(`Line ${n}: an option with no question above it.`);
     } else {
-      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, options with “-” and slides with “#”.`);
+      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, options with “-” and slides with “#”.`);
     }
   });
   finishQ(); finishSlide();
   const newCount = fresh.filter(x => !x.reuse).length;
   return { items, errors, newCount, slideCount: items.filter(x => x.kind === "s").length,
-           revisits: fresh.length - newCount, discussions: items.filter(x => x.kind === "d").length };
+           revisits: fresh.length - newCount, discussions: items.filter(x => x.kind === "d").length,
+           images: items.filter(x => x.kind === "i").length };
 }
 
 /* ---------- activity: height polygenic score ---------- */
@@ -881,6 +897,11 @@ function gwasPaint(root, g, r2, n){
   }
 }
 
+function figureHTML(src, title){
+  return safeSrc(src) ? `<figure class="fig"><img src="${esc(src)}" alt="${esc(title || "")}"></figure>`
+                      : `<p class="warn">Can't show this image: ${esc(src || "no file")}</p>`;
+}
+
 function discussHTML(title, points){
   return `<div class="stitle">Discuss</div>
     <div class="qtext disc-q">${esc(title || "")}</div>
@@ -1132,7 +1153,7 @@ async function teacher(room){
   // Activity steps are slide docs with a `step` of "prs" (genotypes on phones) or
   // "plot" (the prediction plot on screen), so arrow keys walk through them like polls.
   const stepOf   = it => it && it.kind === "s" ? it.s.step || null : null;
-  const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot" };
+  const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot", image: "Image" };
   // Sessions saved before slides existed have `current` but no `show`.
   const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
                           : roomData.current ? [roomData.current] : []).filter(id => qById(id));
@@ -1302,7 +1323,8 @@ async function teacher(room){
         ? `<div class="warn" style="margin:0">${parsed.errors.slice(0, 8).map(esc).join("<br>")}${parsed.errors.length > 8 ? "<br>…" : ""}</div>`
         : `Ready: ${parsed.newCount} new question${parsed.newCount === 1 ? "" : "s"}, ${parsed.slideCount} slide${parsed.slideCount === 1 ? "" : "s"}` +
           (parsed.revisits ? `, ${parsed.revisits} brought back for a revisit` : "") +
-          (parsed.discussions ? `, ${parsed.discussions} discussion prompt${parsed.discussions === 1 ? "" : "s"}.` : ".");
+          (parsed.discussions ? `, ${parsed.discussions} discussion prompt${parsed.discussions === 1 ? "" : "s"}` : "") +
+          (parsed.images ? `, ${parsed.images} image${parsed.images === 1 ? "" : "s"}.` : ".");
     };
     document.getElementById("cancel").onclick = () => closeEditor();
     btn.onclick = async () => {
@@ -1335,6 +1357,10 @@ async function teacher(room){
         writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title, qids: [], order: order++, step: "discuss", points: it.points }]);
         continue;
       }
+      if (it.kind === "i") {
+        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || "Image", qids: [], order: order++, step: "image", src: it.src }]);
+        continue;
+      }
       it.qs.forEach(q => addQ(q, false));
       writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title, qids: it.qs.map(idFor), order: order++ }]);
     }
@@ -1365,6 +1391,12 @@ async function teacher(room){
   async function showItem(id){
     if (plotOn) document.getElementById("prsplot").click();
     const stepIt = items().find(x => x.id === id), step = stepOf(stepIt);
+    if (step === "image") {
+      // The picture goes on the room so phones can show it too.
+      await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || "", src: stepIt.s.src || "",
+                                       open: false, reveal: false, activity: "image" });
+      return;
+    }
     if (step === "discuss") {
       // The prompt and its sub-questions go on the room so phones can show them too.
       await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || "", points: stepIt.s.points || [],
@@ -1848,6 +1880,20 @@ async function teacher(room){
           ${moves}
         </span>
       </div>`;
+      if (stepOf(it) === "image") return `
+      <div class="qitem slide ${live ? "live" : ""}">
+        <span class="n">${i + 1}</span>
+        <div class="body">
+          <span class="t">${esc(it.s.title || "Image")}</span>
+          <span class="m">Image · on the projector and phones${live ? " · showing now" : ""}</span>
+          ${safeSrc(it.s.src) ? `<img class="thumb" src="${esc(it.s.src)}" alt="">` : `<span class="m">Can't show this image: ${esc(it.s.src || "no file")}</span>`}
+        </div>
+        <span class="acts">
+          ${show}
+          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
+          ${moves}
+        </span>
+      </div>`;
       if (stepOf(it) === "discuss") return `
       <div class="qitem slide ${live ? "live" : ""}">
         <span class="n">${i + 1}</span>
@@ -2059,6 +2105,17 @@ async function teacher(room){
     const box = document.getElementById("results");
     const cur = items().find(x => x.id === roomData.current);
     if ((plotOn || stepOf(cur) === "plot") && PRS) return drawPlot(box);
+    if (stepOf(cur) === "image") {
+      const sig = JSON.stringify(["image", cur.id, cur.s.src]);
+      if (sig !== shape) {
+        shape = sig; app.classList.add("wide");
+        box.innerHTML = figureHTML(cur.s.src, cur.s.title);
+        const img = box.querySelector("img");
+        if (img) img.onload = () => fitPresent();          // its size is known only once it loads
+        fitPresent();
+      }
+      return;
+    }
     if (stepOf(cur) === "discuss") {
       const sig = JSON.stringify(["discuss", cur.id, cur.s.title, cur.s.points]);
       if (sig !== shape) { shape = sig; app.classList.add("wide"); box.innerHTML = discussHTML(cur.s.title, cur.s.points); fitPresent(); }
@@ -2277,6 +2334,15 @@ async function student(room){
   let sig = null;
   function draw(){
     if (!roomData) return;
+    if (roomData.activity === "image") {
+      const next = JSON.stringify(["image", roomData.src || ""]);
+      if (next === sig) return;
+      sig = next;
+      el.innerHTML = `<div class="status wait">Look at the screen.</div>` + (safeSrc(roomData.src)
+        ? `<a href="${esc(roomData.src)}" target="_blank" rel="noopener">${figureHTML(roomData.src, roomData.title)}</a>
+           <p class="muted" style="margin:10px 0 0">Tap the picture to open it full size.</p>` : "");
+      return;
+    }
     if (roomData.activity === "discuss") {
       const next = JSON.stringify(["discuss", roomData.title || "", roomData.points || []]);
       if (next === sig) return;
