@@ -283,49 +283,9 @@ window.FIREBASE_CONFIG = {
   .cleads sup{line-height:0}
   .cleads b.yes{color:var(--accent)}
 
-  /* class eQTL scan: one gene per phone, then the class's p-values on screen */
-  .gene-plot{width:100%;height:auto;display:block;margin:4px 0 6px}
-  .gene-plot .gax line{stroke:var(--line)}
-  .gene-plot .gax text{font-size:11px;fill:var(--muted)}
-  .gene-plot .gax .gname{font-size:15px;font-weight:700;fill:var(--ink)}
-  .gene-plot .gax .glbl{font-size:12px;fill:var(--ink);font-weight:600}
-  .gene-plot .gdot{fill:var(--accent);fill-opacity:.5}
-  .gene-plot .gbox{fill:none;stroke:var(--ink);stroke-width:1.5}
-  .gene-plot .gmed{stroke:var(--ink);stroke-width:3}
-  .scan-p{margin:6px 0 0;font-size:1.05rem}
-  .scan-p b{color:var(--accent);font-variant-numeric:tabular-nums}
-  .scan-p sup,.scan-t sup{line-height:0}
-  .scan-truth{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#efeff2;color:var(--ink);font-size:.95rem}
-  .scan-truth.real{background:var(--accent-soft)}
-  body.present .scan .snp-main{grid-template-columns:minmax(0,max(700px,calc(54vh * 900 / 520))) 500px}
-  .scan .snp-side{align-self:start}          /* the buttons stay put when the view changes */
-  .scan .hax text{font-size:18px;fill:var(--muted)}
-  .scan .hax line{stroke:var(--line)}
-  .scan .hax .lbl{font-size:20px;fill:var(--ink);font-weight:600}
-  .scan .hyes,.scan .hreal{fill:var(--accent)}
-  .scan .hno,.scan .hnull{fill:#c4c4cc}
-  .scan .hall{fill:var(--steel)}
-  .scan .hcut{stroke:var(--ink);stroke-width:2;stroke-dasharray:6 5}
-  .scan .hcutlbl{font-size:17px;fill:var(--ink);font-weight:600}
-  .hkey{display:flex;gap:22px;font-size:1.1rem;color:var(--ink)}
-  .hkey span{display:flex;align-items:center;gap:8px}
-  .hkey i{display:inline-block;width:16px;height:16px;border-radius:3px}
-  .hkey i.hyes{background:var(--accent)}
-  .hkey i.hno{background:#c4c4cc}
   .seg{display:flex;gap:8px;flex-wrap:wrap}
-  .scan .snp-box button{font-size:1rem;padding:8px 13px;justify-self:start}
-  .scan .snp-box button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   .snp-box h4 small{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);font-size:.85rem;margin-left:6px}
-  table.scan-t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;table-layout:fixed;font-size:1.05rem}
-  table.scan-t col.sth{width:42%}
-  table.scan-t th{text-align:left;font-weight:700;color:var(--ink);padding:6px 8px 6px 0;line-height:1.2}
-  table.scan-t th small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:2px}
-  table.scan-t td{text-align:right;padding:6px 0 6px 6px;white-space:nowrap}
-  table.scan-t tr + tr{border-top:1px solid var(--line)}
-  table.scan-t tr.hd td{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
-  table.scan-t td b{font-size:1.3rem}
-  table.scan-t .q{color:var(--muted)}
-  .scan-note{margin:0;font-size:1.05rem;color:var(--ink);line-height:1.45}
+  .snp-note{margin:0;font-size:1.05rem;color:var(--ink);line-height:1.45}
 
   /* image steps */
   .fig{margin:0}
@@ -743,7 +703,7 @@ function parseDeck(text, existing){
     }
     if (disc && /^[-*•]\s*/.test(line)) { disc.points.push(line.replace(/^[-*•]\s*/, "").slice(0, 300)); return; }
     disc = null;
-    if ((m = line.match(/^(SNP|EQTL|SCAN|COLOC|LD)\s*[:.)]\s*(.*)$/i))) {
+    if ((m = line.match(/^(SNP|EQTL|COLOC|LD)\s*[:.)]\s*(.*)$/i))) {
       finishQ(); finishSlide();
       items.push({ kind: m[1].toLowerCase(), title: m[2].trim().slice(0, 299), line: n });
       return;
@@ -769,14 +729,14 @@ function parseDeck(text, existing){
       if (q) q.options.push(m[1].trim());
       else errors.push(`Line ${n}: an option with no question above it.`);
     } else {
-      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the class eQTL scan with “SCAN:”, the colocalization demo with “COLOC:”, the LD demo with “LD:”, options with “-” and slides with “#”.`);
+      errors.push(`Line ${n}: start questions with “Q:”, discussion prompts with “D:”, images with “IMG:”, the one-SNP demo with “SNP:” (or “EQTL:”), the colocalization demo with “COLOC:”, the LD demo with “LD:”, options with “-” and slides with “#”.`);
     }
   });
   finishQ(); finishSlide();
   const newCount = fresh.filter(x => !x.reuse).length;
   const count = k => items.filter(x => x.kind === k).length;
   return { items, errors, newCount, slideCount: count("s"), revisits: fresh.length - newCount,
-           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), scans: count("scan"), colocs: count("coloc"), lds: count("ld") };
+           discussions: count("d"), images: count("i"), snps: count("snp"), eqtls: count("eqtl"), colocs: count("coloc"), lds: count("ld") };
 }
 
 /* ---------- activity: height polygenic score ---------- */
@@ -1323,18 +1283,9 @@ function snpPaint(root, g, beta, p, K){
     +b.dataset.b === 0 ? beta === 0 : beta > 0 && Math.abs(Math.log10(+b.dataset.b / beta)) < 0.01));
 }
 
-/* ---------- activity: a class eQTL scan ---------- */
-// Each phone is one gene: its expression in 100 people, split by their genotype at one SNP near
-// the gene. Students vote by eye: is that SNP an eQTL? The projector then shows the class's
-// p-values, how many eGenes each significance threshold calls, and (T) which genes really had an
-// eQTL; G switches to all 20,000 genes of the made-up genome. One SNP per gene keeps it simple
-// (real studies test thousands of SNPs near each gene).
-// Everything is simulated from the step's id, and a phone's gene comes from the student's
-// sign-in id, so phones and the projector agree without storing anything new.
-const SCAN_TITLE = "Each phone is one gene: is its SNP an eQTL?";
-const SCAN_Q = "Is this SNP an eQTL for your gene?";
-const SCAN_OPTS = ["Yes, an eQTL", "No, just noise"];
-const SCAN_G = 20000, SCAN_N = 100, SCAN_REAL = 0.3, SCAN_BINS = 20;
+/* ---------- shared: seeded random numbers and t-test p-values ---------- */
+// The colocalization and LD demos draw their data from a fixed seed, so every screen shows the
+// same locus and the same people.
 function hash32(s){
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
@@ -1391,221 +1342,6 @@ function ibeta(a, b, x){
   return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
 }
 const tPval = (t, df) => Math.min(1, Math.max(0, ibeta(df / 2, 0.5, df / (df + t * t))));
-// Regress expression on genotype: the slope's two-sided p-value, with N − 2 degrees of freedom.
-function regP(g, y){
-  const n = g.length, mg = g.reduce((s, v) => s + v, 0) / n, my = y.reduce((s, v) => s + v, 0) / n;
-  let sxy = 0, sxx = 0, syy = 0;
-  for (let i = 0; i < n; i++) { sxy += (g[i] - mg) * (y[i] - my); sxx += (g[i] - mg) ** 2; syy += (y[i] - my) ** 2; }
-  if (!sxx || !syy) return 1;
-  const r2 = Math.min(1 - 1e-15, sxy * sxy / (sxx * syy));
-  return tPval(Math.sqrt((n - 2) * r2 / (1 - r2)), n - 2);
-}
-// One gene: an allele frequency, whether its SNP is a real eQTL (3 genes in 10), and if so an
-// effect β in units of the person-to-person spread (typically 0.5, from about 0.15 to 1.6),
-// raising or lowering expression; then 100 people's genotypes and expression levels.
-const SCAN_BASES = ["A", "C", "G", "T"];
-function scanGene(salt, j){
-  const rnd = rng32(hash32(salt + ":" + j));
-  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
-  const p = 0.05 + 0.45 * rnd();
-  const real = rnd() < SCAN_REAL;
-  const beta = real ? (rnd() < 0.5 ? -1 : 1) * Math.min(2, 0.5 * Math.exp(0.6 * gauss())) : 0;
-  const a = Math.floor(rnd() * 4), b = (a + 1 + Math.floor(rnd() * 3)) % 4;
-  const g = new Array(SCAN_N), y = new Array(SCAN_N);
-  for (let i = 0; i < SCAN_N; i++) g[i] = (rnd() < p ? 1 : 0) + (rnd() < p ? 1 : 0);
-  if (g.every(v => v === g[0])) g[0] = g[0] ? g[0] - 1 : 1;       // a SNP nobody varies at can't be tested
-  for (let i = 0; i < SCAN_N; i++) y[i] = beta * g[i] + gauss();
-  const r2 = beta * beta * 2 * p * (1 - p) / (beta * beta * 2 * p * (1 - p) + 1);
-  return { j, p, real, beta, r2, alleles: [SCAN_BASES[a], SCAN_BASES[b]], g, y, pval: regP(g, y) };
-}
-const scanIndex = (salt, uid) => hash32(salt + "|" + uid) % SCAN_G;
-const scanName = j => `Gene ${j + 1}`;
-// All 20,000 genes, made only when the projector first asks for them.
-const scanGenomes = new Map();
-function scanGenome(salt){
-  if (scanGenomes.has(salt)) return scanGenomes.get(salt);
-  const pv = new Float64Array(SCAN_G), real = new Uint8Array(SCAN_G);
-  for (let j = 0; j < SCAN_G; j++) { const x = scanGene(salt, j); pv[j] = x.pval; real[j] = x.real ? 1 : 0; }
-  const out = { pv, real };
-  scanGenomes.set(salt, out);
-  return out;
-}
-// Three ways to call eGenes from m p-values: p < 0.05, Bonferroni (p < 0.05 / m), and a 5% false
-// discovery rate (Benjamini–Hochberg: the largest k with the k-th smallest p ≤ 0.05·k/m).
-function scanRules(pv){
-  const m = pv.length, sorted = Array.from(pv).sort((a, b) => a - b);
-  let k = 0;
-  for (let i = m; i >= 1; i--) if (sorted[i - 1] <= 0.05 * i / m) { k = i; break; }
-  return [
-    { id: "p05",  name: "p &lt; 0.05", note: "each gene on its own", hit: p => p < 0.05 },
-    { id: "bonf", name: "Bonferroni", note: `p &lt; 0.05 / ${m.toLocaleString("en-US")} = ${fmtP(Math.log10(0.05 / m))}`, hit: p => p < 0.05 / m },
-    { id: "fdr",  name: "FDR 5%", note: k ? `Benjamini–Hochberg: p ≤ ${fmtP(Math.log10(sorted[k - 1]))}` : "Benjamini–Hochberg: none pass",
-      hit: p => k > 0 && p <= sorted[k - 1] },
-  ];
-}
-const fmtCount = n => n.toLocaleString("en-US");
-
-// One gene on a phone: expression (scaled to mean 0, spread 1) by genotype, dots and boxes.
-function scanPlotSVG(gene){
-  const W = 360, H = 260, L = 36, R = 6, T = 10, B = 46;
-  const n = gene.y.length, my = gene.y.reduce((s, v) => s + v, 0) / n;
-  const sy = Math.sqrt(gene.y.reduce((s, v) => s + (v - my) ** 2, 0) / n) || 1;
-  const z = gene.y.map(v => (v - my) / sy);
-  const lo = Math.min(-3, Math.floor(Math.min(...z))), hi = Math.max(3, Math.ceil(Math.max(...z)));
-  const gx = k => L + (k + 0.5) / 3 * (W - L - R), py = v => T + (hi - v) / (hi - lo) * (H - T - B);
-  const [a, b] = gene.alleles, names = [a + a, a + b, b + b];
-  const groups = [0, 1, 2].map(k => z.filter((_, i) => gene.g[i] === k).sort((u, v) => u - v));
-  const q = (s, f) => { const x = (s.length - 1) * f, i = Math.floor(x); return s[i] + ((s[Math.min(i + 1, s.length - 1)] - s[i]) * (x - i)); };
-  const ticks = []; for (let v = lo; v <= hi; v++) ticks.push(v);
-  const boxes = groups.map((s, k) => s.length < 5 ? "" : `
-    <rect class="gbox" x="${(gx(k) - 34).toFixed(1)}" width="68" y="${py(q(s, 0.75)).toFixed(1)}" height="${(py(q(s, 0.25)) - py(q(s, 0.75))).toFixed(1)}" rx="4"/>
-    <line class="gmed" x1="${(gx(k) - 34).toFixed(1)}" x2="${(gx(k) + 34).toFixed(1)}" y1="${py(q(s, 0.5)).toFixed(1)}" y2="${py(q(s, 0.5)).toFixed(1)}"/>`).join("");
-  const dots = z.map((v, i) => {
-    const jit = (((i * 7919) % 101) / 100 - 0.5) * 56;
-    return `<circle class="gdot" r="3.2" cx="${(gx(gene.g[i]) + jit).toFixed(1)}" cy="${py(v).toFixed(1)}"/>`;
-  }).join("");
-  return `<svg class="gene-plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Expression of ${scanName(gene.j)} in ${n} people by genotype">
-    <g class="gax">${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v).toFixed(1)}" y2="${py(v).toFixed(1)}"/><text x="${L - 6}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end">${String(v).replace("-", "−")}</text>`).join("")}
-      ${names.map((nm, k) => `<text class="gname" x="${gx(k).toFixed(1)}" y="${H - B + 20}" text-anchor="middle">${nm}</text><text x="${gx(k).toFixed(1)}" y="${H - B + 38}" text-anchor="middle">${groups[k].length} ${groups[k].length === 1 ? "person" : "people"}</text>`).join("")}
-      <text class="glbl" transform="translate(11 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Expression</text></g>
-    ${boxes}${dots}
-  </svg>`;
-}
-
-function scanStudentHTML(gene, qid, choice, open, reveal, truth, failed){
-  const status = failed ? `<div class="status">That answer didn't go through — voting may have just closed.</div>`
-    : open ? (choice == null ? `<div class="status">Look at your gene, then vote: is the SNP an eQTL?</div>`
-                             : `<div class="status ok">Answer recorded — tap the other one to change it.</div>`)
-    : `<div class="status wait">Voting is closed. Look at the screen.</div>`;
-  const b = gene.alleles[1], r2 = Math.round(gene.r2 * 100);
-  // A real effect that explains under 2% of the variation is hard to see in 100 people; say so.
-  const truthLine = !truth ? "" : gene.real && gene.r2 < 0.02
-    ? `<div class="scan-truth real"><b>A real eQTL, but a weak one.</b> Each copy of ${b} ${gene.beta > 0 ? "raises" : "lowers"} this gene's
-       expression a little: the SNP explains ${r2 < 1 ? "under 1" : r2}% of the variation, too little to see reliably in ${SCAN_N} people.</div>`
-    : gene.real
-    ? `<div class="scan-truth real"><b>A real eQTL.</b> Each copy of ${b} ${gene.beta > 0 ? "raises" : "lowers"} this gene's expression;
-       the SNP explains ${r2}% of the variation in it.</div>`
-    : `<div class="scan-truth"><b>No eQTL.</b> This SNP does nothing to the gene: any pattern you saw is chance.</div>`;
-  return `${status}
-    <div class="stitle">Class eQTL scan</div>
-    <p class="muted" style="margin:0">Your gene is</p>
-    <div class="celeb">${scanName(gene.j)}</div>
-    <p style="margin:0 0 8px">Its expression in ${SCAN_N} people, split by their genotype at a SNP near the gene.</p>
-    ${scanPlotSVG(gene)}
-    ${reveal ? `<p class="scan-p">p-value for your gene: <b>${fmtP(Math.log10(gene.pval))}</b></p>` : ""}
-    ${truthLine}
-    <div class="qtext" style="margin-top:14px">${SCAN_Q}</div>
-    ${SCAN_OPTS.map((o, i) => `
-      <button class="choice" aria-pressed="${choice === i}" onclick="__vote('${qid}', ${i})" ${open ? "" : "disabled"}>
-        <span class="tag">${LETTERS[i]}</span><span>${o}</span>
-      </button>`).join("")}`;
-}
-
-// The projector. While voting: how many genes have been judged. Revealed: a histogram of the
-// p-values (each of the class's genes a square; all 20,000 as bars) and what each threshold calls.
-function scanScreenHTML(o){
-  if (!o.reveal) return `
-    <div class="stitle">Activity</div>
-    <div class="qtext">${esc(o.title)}</div>
-    <p class="prs-how">Your phone shows one gene's expression in ${SCAN_N} people, split by their genotype at a SNP
-      near the gene. Some genes have a real eQTL; the rest don't. Judge by eye: is the SNP an eQTL for your gene?</p>
-    <div class="count"><b>${o.n}</b> gene${o.n === 1 ? "" : "s"} judged</div>`;
-  const all = o.all, genes = o.genes;
-  const m = all ? SCAN_G : genes.length;
-  const pv = all ? o.genome.pv : genes.map(x => x.pval);
-  const isReal = all ? k => o.genome.real[k] === 1 : k => genes[k].real;
-  const rules = scanRules(pv);
-  const rows = [];
-  if (!all) rows.push({ name: "By eye", note: "your votes", hit: k => genes[k].said });
-  rules.forEach(r => rows.push({ name: r.name, note: r.note, hit: k => r.hit(pv[k]) }));
-  const nReal = Array.from(pv, (_, k) => isReal(k)).filter(Boolean).length;
-  const cell = v => o.truth ? fmtCount(v) : `<span class="q">?</span>`;
-  const table = rows.map(r => {
-    let called = 0, real = 0;
-    for (let k = 0; k < m; k++) if (r.hit(k)) { called++; if (isReal(k)) real++; }
-    return `<tr><th>${r.name}<small>${r.note}</small></th><td><b>${fmtCount(called)}</b></td><td>${cell(real)}</td><td>${cell(called - real)}</td><td>${cell(nReal - real)}</td></tr>`;
-  }).join("");
-
-  // the histogram
-  const W = 900, H = 520, L = 78, R = 24, T = 26, B = 78;
-  const px = v => L + v * (W - L - R), bw = (W - L - R) / SCAN_BINS;
-  const binOf = p => Math.min(SCAN_BINS - 1, Math.floor(p * SCAN_BINS));
-  const bins = Array.from({ length: SCAN_BINS }, () => []);
-  for (let k = 0; k < m; k++) bins[binOf(pv[k])].push(k);
-  const colourBy = k => o.truth ? isReal(k) : all ? false : genes[k].said;
-  let marks = "", yticks = "", ylab = all ? "Number of genes" : "Genes";
-  if (all) {
-    const top = Math.max(...bins.map(b => b.length));
-    const step = [100, 200, 250, 500, 1000, 2000, 2500, 5000].find(s => top / s <= 6) || 10000;
-    const ymax = Math.ceil(top / step) * step, py = v => T + (1 - v / ymax) * (H - T - B);
-    for (let v = 0; v <= ymax; v += step) yticks += `<line x1="${L}" x2="${W - R}" y1="${py(v).toFixed(1)}" y2="${py(v).toFixed(1)}"/><text x="${L - 10}" y="${(py(v) + 6).toFixed(1)}" text-anchor="end">${fmtCount(v)}</text>`;
-    bins.forEach((b, i) => {
-      const x = (px(i / SCAN_BINS) + 1.5).toFixed(1), w = (bw - 3).toFixed(1);
-      const nr = o.truth ? b.filter(isReal).length : 0;
-      const y0 = py(0), y1 = py(nr), y2 = py(b.length);
-      if (nr) marks += `<rect class="hreal" x="${x}" width="${w}" y="${y1.toFixed(1)}" height="${(y0 - y1).toFixed(1)}"/>`;
-      if (b.length - nr) marks += `<rect class="${o.truth ? "hnull" : "hall"}" x="${x}" width="${w}" y="${y2.toFixed(1)}" height="${(y1 - y2).toFixed(1)}"/>`;
-    });
-  } else {
-    const top = Math.max(1, ...bins.map(b => b.length));
-    const unit = Math.min(bw - 4, (H - T - B) / top), size = unit - 3;
-    const per = [1, 2, 5, 10, 20].find(s => top / s <= 8) || 50;
-    for (let v = 0; v <= top; v += per) { const y = H - B - v * unit; yticks += `<line x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${L - 10}" y="${(y + 6).toFixed(1)}" text-anchor="end">${v}</text>`; }
-    bins.forEach((b, i) => {
-      // the "yes" squares (or the real eQTLs, once shown) at the bottom of each stack
-      const ord = [...b].sort((u, v) => colourBy(v) - colourBy(u) || pv[u] - pv[v]);
-      ord.forEach((k, s) => {
-        const x = px(i / SCAN_BINS) + (bw - size) / 2, y = H - B - (s + 1) * unit + 1.5;
-        marks += `<rect class="${colourBy(k) ? "hyes" : "hno"}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" rx="3"/>`;
-      });
-    });
-  }
-  const xt = [0, 0.25, 0.5, 0.75, 1].map(v => `<text x="${px(v).toFixed(1)}" y="${H - B + 30}" text-anchor="middle">${v}</text>`).join("");
-  const cut = px(0.05);
-  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Histogram of ${fmtCount(m)} p-values">
-      <g class="hax">${yticks}${xt}
-        <text class="lbl" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">p-value, one per gene</text>
-        <text class="lbl" transform="translate(20 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">${ylab}</text></g>
-      ${marks}
-      <line class="hcut" x1="${cut.toFixed(1)}" x2="${cut.toFixed(1)}" y1="${T - 14}" y2="${H - B}"/>
-      <text class="hcutlbl" x="${(cut + 8).toFixed(1)}" y="${T - 2}">p = 0.05</text>
-    </svg>`;
-  const yes = o.truth ? "real eQTL" : "you said eQTL", no = o.truth ? "no eQTL" : "you said no";
-  const key = all && !o.truth ? "" : `<div class="hkey"><span><i class="hyes"></i>${yes}</span><span><i class="hno"></i>${no}</span></div>`;
-  const chance = Math.round(0.05 * m * 10) / 10;
-  return `
-    <div class="snp-slide scan-slide">
-    <div class="stitle">Class eQTL scan</div>
-    <div class="qtext" style="margin-bottom:8px">${all ? `p-values for all ${fmtCount(SCAN_G)} genes` : `p-values for our ${m} gene${m === 1 ? "" : "s"}`}</div>
-    <div class="snp scan" id="scan">
-      <div class="snp-main">
-        <div class="snp-left">${svg}${key}</div>
-        <div class="snp-side">
-          <div class="snp-box">
-            <div class="seg">
-              <button class="small ghost ${all ? "" : "on"}" data-all="0">Our ${genes.length} gene${genes.length === 1 ? "" : "s"}</button>
-              <button class="small ghost ${all ? "on" : ""}" data-all="1">All ${fmtCount(SCAN_G)} genes</button>
-            </div>
-            <button class="small ghost ${o.truth ? "on" : ""}" id="scantruth">${o.truth ? "Hide which are real" : "Show which are real"}</button>
-          </div>
-          <div class="snp-box">
-            <h4>eGenes called <small>genes with a significant eQTL</small></h4>
-            <table class="scan-t">
-              <colgroup><col class="sth"><col span="4"></colgroup>
-              <tr class="hd"><th></th><td>called</td><td>real</td><td>chance</td><td>missed</td></tr>
-              ${table}
-            </table>
-          </div>
-          <div class="snp-box">
-            <p class="scan-note">If no gene had an eQTL, p &lt; 0.05 would still call 1 gene in 20:
-              about <b>${fmtCount(chance)}</b> of these ${fmtCount(m)}.${o.truth ? ` ${fmtCount(nReal)} of the ${fmtCount(m)} really have one.` : ""}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>`;
-}
-
 /* ---------- demo: colocalization, with an LD knob ---------- */
 // A made-up 600 kb locus with a GWAS signal for a trait and an eQTL for Gene X. Either one variant
 // causes both, or two different variants do, with the LD between them on a knob. LD decays with
@@ -1899,7 +1635,7 @@ function ldHTML(title){
           <div class="snp-box ld-strip">
             <h4>${LD_STRIP} of the ${LD_DATA.H} chromosomes <small>maroon: the allele that goes with higher expression</small></h4>
             <svg class="ldstrip" viewBox="0 0 1000 96" role="img" aria-label="Alleles at the three SNPs on ${LD_STRIP} chromosomes"></svg>
-            <p class="scan-note" id="ldnote"></p>
+            <p class="snp-note" id="ldnote"></p>
           </div>
         </div>
         <div class="snp-side">
@@ -2223,11 +1959,12 @@ async function teacher(room){
   const standalone = q => q.standalone !== false;
   const slideQids  = s => (s.qids || []).filter(id => qById(id));
 
-  // What the arrow keys walk through: stand-alone questions and slides, by order.
+  // What the arrow keys walk through: stand-alone questions and slides, by order. A step this
+  // version doesn't have (the class eQTL scan, from an earlier import) is left out.
   function items(){
     return [
       ...questions.filter(standalone).map(q => ({ kind:"q", id:q.id, order:q.order || 0, q })),
-      ...slides.map(s => ({ kind:"s", id:s.id, order:s.order || 0, s })),
+      ...slides.filter(s => !s.step || s.step in STEP_NAME).map(s => ({ kind:"s", id:s.id, order:s.order || 0, s })),
     ].sort((a, b) => a.order - b.order);
   }
   const showFor  = it => it.kind === "q" ? [it.id] : slideQids(it.s);
@@ -2236,7 +1973,7 @@ async function teacher(room){
   // "plot" (the prediction plot on screen), so arrow keys walk through them like polls.
   const stepOf   = it => it && it.kind === "s" ? it.s.step || null : null;
   const STEP_NAME = { prs: "Activity: your celebrity's genotypes", plot: "Prediction plot", image: "Image", snp: "One SNP's R²",
-                      eqtl: "An eQTL's R²", scan: "Class eQTL scan", coloc: "Colocalization", ld: "LD", discuss: "Discussion" };
+                      eqtl: "An eQTL's R²", coloc: "Colocalization", ld: "LD", discuss: "Discussion" };
   // Sessions saved before slides existed have `current` but no `show`.
   const liveIds  = () => (Array.isArray(roomData.show) ? roomData.show
                           : roomData.current ? [roomData.current] : []).filter(id => qById(id));
@@ -2388,7 +2125,7 @@ async function teacher(room){
           <code class="inline">- </code> an option · a <code class="inline">Q:</code> with no options on a slide
           brings back the earlier question with the same wording · <code class="inline">D:</code> a discussion prompt ·
           <code class="inline">IMG:</code> a picture · <code class="inline">SNP:</code> the one-SNP regression demo
-          (<code class="inline">EQTL:</code> the same for a gene's expression) · <code class="inline">SCAN:</code> the class eQTL scan ·
+          (<code class="inline">EQTL:</code> the same for a gene's expression) ·
           <code class="inline">COLOC:</code> the colocalization demo · <code class="inline">LD:</code> the LD demo ·
           <code class="inline">//</code> notes are ignored.</p>
         <label class="check" style="margin-top:8px"><input type="checkbox" id="atstart">
@@ -2415,7 +2152,6 @@ async function teacher(room){
           (parsed.images ? `, ${parsed.images} image${parsed.images === 1 ? "" : "s"}` : "") +
           (parsed.snps ? `, ${parsed.snps} one-SNP demo${parsed.snps === 1 ? "" : "s"}` : "") +
           (parsed.eqtls ? `, ${parsed.eqtls} eQTL demo${parsed.eqtls === 1 ? "" : "s"}` : "") +
-          (parsed.scans ? `, ${parsed.scans} class eQTL scan${parsed.scans === 1 ? "" : "s"}` : "") +
           (parsed.colocs ? `, ${parsed.colocs} colocalization demo${parsed.colocs === 1 ? "" : "s"}` : "") +
           (parsed.lds ? `, ${parsed.lds} LD demo${parsed.lds === 1 ? "" : "s"}` : "") + ".";
     };
@@ -2456,13 +2192,6 @@ async function teacher(room){
       }
       if (it.kind === "coloc" || it.kind === "ld") {
         writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || (it.kind === "ld" ? LD_TITLE : COLOC_TITLE), qids: [], order: order++, step: it.kind }]);
-        continue;
-      }
-      if (it.kind === "scan") {
-        // The vote ("eQTL or not?") is an ordinary question that lives on the step.
-        const qid = newQid() + (n++).toString(36);
-        writes.push([qRef(room, qid), { question: SCAN_Q, options: SCAN_OPTS, order: order++, standalone: false }]);
-        writes.push([sRef(room, newSid() + (n++).toString(36)), { title: it.title || SCAN_TITLE, qids: [qid], order: order++, step: "scan" }]);
         continue;
       }
       if (it.kind === "i") {
@@ -2507,12 +2236,6 @@ async function teacher(room){
       // On screen only (the knob is yours); phones say to look at the screen.
       await updateDoc(roomRef(room), { current: id, show: [], title: stepIt.s.title || ({ coloc: COLOC_TITLE, ld: LD_TITLE }[step] || SNP_KINDS[step].title),
                                        open: false, reveal: false, activity: "screen" });
-      return;
-    }
-    if (step === "scan") {
-      // Each phone shows its own gene and votes on the step's question; which genes are real stays hidden.
-      await updateDoc(roomRef(room), { current: id, show: slideQids(stepIt.s), title: titleFor(stepIt),
-                                       open: true, reveal: false, truth: false, activity: "scan" });
       return;
     }
     if (step === "image") {
@@ -2564,12 +2287,6 @@ async function teacher(room){
     if (!confirm("Delete this slide? Its questions and their votes are kept.")) return;
     const s = slides.find(x => x.id === sid);
     await deleteDoc(sRef(room, sid));
-    // The class eQTL scan's question belongs to it alone, so it goes too.
-    if (s && s.step === "scan") {
-      for (const qid of s.qids || []) { await wipeVotes(qid); await deleteDoc(qRef(room, qid)); }
-      if (roomData.current === sid) await hideAll();
-      return;
-    }
     // A slide-only question that was on no other slide goes back to the main
     // list, so nothing ends up unreachable.
     for (const qid of (s && s.qids) || []) {
@@ -2608,10 +2325,10 @@ async function teacher(room){
   }
   // Space moves a poll along, one press at a time: close voting → reveal the results →
   // open voting again (results hide). Closing a re-polled round reveals straight away.
-  // Activity steps have no voting, so Space leaves them alone; the class eQTL scan has a vote.
+  // Activity steps have no voting, so Space leaves them alone.
   async function spaceKey(){
     const st = roomData.current && stepOf(items().find(x => x.id === roomData.current));
-    if (!roomData.current || (st && st !== "scan")) return;
+    if (!roomData.current || st) return;
     if (roomData.open) return toggleOpen();
     if (!roomData.reveal) return toggleReveal();
     return toggleOpen();
@@ -2926,30 +2643,6 @@ async function teacher(room){
     fitPresent();
   }
 
-  // The class eQTL scan on screen. Which genes are the class's comes from the votes (each vote
-  // is stored under the student's sign-in id, which picks their gene). The view of all 20,000
-  // genes is yours, on screen only; which genes are real (T) goes to phones too.
-  let scanAll = false;
-  const scanTruth = () => updateDoc(roomRef(room), { truth: !roomData.truth });
-  const scanGenomeToggle = () => { scanAll = !scanAll; drawResults(); };
-  function drawScan(box, cur){
-    const qid = slideQids(cur.s)[0], vs = (qid && votes[qid]) || [];
-    const reveal = !roomData.open && !!roomData.reveal, truth = !!roomData.truth;
-    const sg = JSON.stringify(["scan", cur.id, cur.s.title, reveal, truth, scanAll,
-                               reveal ? vs.map(v => [v.uid, v.choice]) : vs.length]);
-    if (sg === shape) return;
-    shape = sg;
-    app.classList.add("wide");
-    const genes = reveal ? vs.filter(v => v.uid && Number.isInteger(v.choice))
-      .map(v => ({ ...scanGene(cur.id, scanIndex(cur.id, v.uid)), said: v.choice === 0 })) : [];
-    box.innerHTML = scanScreenHTML({ title: cur.s.title || SCAN_TITLE, reveal, truth, n: vs.length,
-                                     all: reveal && scanAll, genes, genome: reveal && scanAll ? scanGenome(cur.id) : null });
-    box.querySelectorAll(".seg [data-all]").forEach(b => b.onclick = () => { if (scanAll !== (b.dataset.all === "1")) scanGenomeToggle(); });
-    const tb = box.querySelector("#scantruth");
-    if (tb) tb.onclick = scanTruth;
-    fitPresent();
-  }
-
   function drawPrs(){
     const el = document.getElementById("prsbody"), btn = document.getElementById("prsgo");
     if (!PRS) {
@@ -3017,9 +2710,6 @@ async function teacher(room){
     else if (e.key === " ") { e.preventDefault(); spaceKey(); }
     else if (e.key === "r" || e.key === "R") toggleReveal();
     else if (e.key === "p" || e.key === "P") repoll();
-    else if ((e.key === "t" || e.key === "T" || e.key === "g" || e.key === "G") && document.querySelector("#results #scan")) {
-      if (e.key.toLowerCase() === "t") scanTruth(); else scanGenomeToggle();
-    }
     else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && document.querySelector("#results #plot, #results #snp, #results #coloc, #results #ld")) {
       e.preventDefault();
       const box = document.getElementById("results"), up = e.key === "ArrowUp";
@@ -3176,19 +2866,6 @@ async function teacher(room){
           ${moves}
         </span>
       </div>`;
-      if (stepOf(it) === "scan") return `
-      <div class="qitem slide ${live ? "live" : ""}">
-        <span class="n">${i + 1}</span>
-        <span class="body">
-          <span class="t">${esc(it.s.title || SCAN_TITLE)}</span>
-          <span class="m">Class eQTL scan · each phone judges one gene, then p-values and thresholds on screen${live ? " · showing now" : ""}</span>
-        </span>
-        <span class="acts">
-          ${show}
-          <button class="small ghost" onclick="__delSlide('${it.id}')">Remove</button>
-          ${moves}
-        </span>
-      </div>`;
       if (stepOf(it) === "image") return `
       <div class="qitem slide ${live ? "live" : ""}">
         <span class="n">${i + 1}</span>
@@ -3282,8 +2959,7 @@ async function teacher(room){
     // nudge toward Re-poll until it's been pressed.
     const revisit = i >= 0 && isRevisit(list, i) && !ids.every(id => qById(id).earlier);
     const appear = appearances(), once = stepOf(it) ? 0 : ids.filter(id => askedOnce(appear, id)).length;
-    const scan = stepOf(it) === "scan";
-    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, !!roomData.truth, revisit, i, list.length, ids.length, once]);
+    const s = JSON.stringify([roomData.current, roomData.open, !!roomData.reveal, revisit, i, list.length, ids.length, once]);
 
     // Only the response count moves as votes land — update it in place so
     // the controls underneath the instructor's cursor stay put.
@@ -3325,10 +3001,6 @@ async function teacher(room){
         ? (ids.length === 1 ? "This question doesn't come back later" : "None of these questions come back later")
         : `${once} of these questions ${once === 1 ? "doesn't" : "don't"} come back later`}: go through ${once === 1 ? "it" : "them"} now
         (<kbd>space</kbd> closes voting, <kbd>space</kbd> again reveals).</p>` : ""}
-      ${scan ? `<p class="warn" style="margin:12px 0 0">Class eQTL scan: each phone shows one gene; students vote eQTL or not.
-        <kbd>space</kbd> closes voting, <kbd>space</kbd> again shows the p-values. Then <kbd>T</kbd> shows which genes are
-        really eQTLs (${roomData.truth ? "showing now, on phones too" : "on phones too"}), and <kbd>G</kbd> switches between the class's genes and all
-        ${fmtCount(SCAN_G)}.</p>` : ""}
       ${revisit ? `<p class="warn" style="margin:12px 0 0">These questions were asked earlier. Press <b>Re-poll</b> (or <kbd>P</kbd>)
         to start the second round; closing voting afterwards shows before and after together.</p>` : ""}
       <p class="muted" style="margin:12px 0 0">
@@ -3420,7 +3092,6 @@ async function teacher(room){
     const cur = items().find(x => x.id === roomData.current);
     if ((plotOn || stepOf(cur) === "plot") && PRS) return drawPlot(box);
     if (stepOf(cur) === "snp" || stepOf(cur) === "eqtl") return drawSnp(box, cur, SNP_KINDS[stepOf(cur)]);
-    if (stepOf(cur) === "scan") return drawScan(box, cur);
     if (stepOf(cur) === "coloc") return drawColoc(box, cur);
     if (stepOf(cur) === "ld") return drawLd(box, cur);
     if (stepOf(cur) === "image") {
@@ -3674,18 +3345,6 @@ async function student(room){
       if (next === sig) return;
       sig = next;
       el.innerHTML = `<div class="status wait">Talk it over with the people around you.</div>` + discussHTML(roomData.title, roomData.points);
-      return;
-    }
-    if (roomData.activity === "scan") {
-      // This student's gene comes from their sign-in id, so it's the same after a reload.
-      const qid = showIds()[0];
-      if (!qid || !(qid in mine)) return;          // keep the current screen until the vote snapshot lands
-      const open = !!roomData.open, reveal = !open && !!roomData.reveal, truth = !!roomData.truth;
-      const next = JSON.stringify(["scan", roomData.current, qid, open, reveal, truth, mine[qid] ?? null, failed]);
-      if (next === sig) return;
-      sig = next;
-      const gene = scanGene(roomData.current, scanIndex(roomData.current, uid));
-      el.innerHTML = scanStudentHTML(gene, qid, mine[qid] ?? null, open, reveal, truth, failed);
       return;
     }
     if (roomData.activity === "prs") {

@@ -151,7 +151,6 @@ D: What does the omnigenic model imply about…   ← a discussion prompt
 IMG: slides/figure.png A title       ← a picture, full screen
 SNP:                                 ← the one-SNP regression demo (below)
 EQTL:                                ← the same demo for a gene's expression: an eQTL
-SCAN:                                ← the class eQTL scan, one gene per phone (below)
 COLOC:                               ← GWAS and eQTL at one locus, with an LD knob (below)
 LD:                                  ← a causal SNP's regression beside two SNPs in LD with it (below)
 // notes like an answer key are ignored
@@ -380,45 +379,6 @@ from a poll to the activity (phones show each student's celebrity), to the
 plot, and on to the next poll. On the plot, drag the knobs, press
 <kbd>↑</kbd> <kbd>↓</kbd> to change R² by 0.05, or <kbd>shift</kbd> <kbd>↑</kbd>
 <kbd>↓</kbd> to change the GWAS size (by a quarter of a factor of ten).
-
-### Activity: a class eQTL scan
-
-`SCAN:` in an import (optionally followed by a title) adds a step where the
-class is a genome-wide eQTL study: each phone is one gene. A student sees their
-gene's expression in 100 people, split by genotype at one SNP near the gene
-(dots and boxes), and votes by eye: *Yes, an eQTL* or *No, just noise*. The
-projector counts the genes judged. No class list is needed: each phone's gene
-comes from its anonymous sign-in, so a reload shows the same gene, and phones and
-projector agree without anything new being stored.
-
-- <kbd>space</kbd> closes voting, <kbd>space</kbd> again shows the **p-values**
-  (each phone also shows its own). The projector has a histogram of the class's
-  p-values, one square per gene, coloured by how the student voted, and a table
-  of how many eGenes (genes with a significant eQTL) each approach calls: by
-  eye, p < 0.05, Bonferroni (0.05 / number of genes) and a 5% false discovery
-  rate (Benjamini–Hochberg). A note gives how many p < 0.05 would call if no
-  gene had an eQTL (1 in 20).
-- <kbd>T</kbd> (or **Show which are real**) reveals which genes really have an
-  eQTL, on the projector and on phones ("A real eQTL", "A real eQTL, but a weak
-  one", or "No eQTL"). The squares turn maroon for real eQTLs, and the table
-  fills in how many of each approach's calls are real, how many are chance, and
-  how many real eQTLs it missed.
-- <kbd>G</kbd> (or **All 20,000 genes**) switches to the whole made-up genome:
-  the classic p-value histogram, flat for genes with no eQTL and a spike near 0
-  for real ones. With these settings p < 0.05 calls about 5,000 genes, around
-  700 of them by chance (1 in 20 of the 14,000 without an eQTL); Bonferroni
-  (2.5 × 10⁻⁶) about 1,300, all real; FDR 5% about 3,600, under 5% of them
-  chance. This view is only on your screen.
-
-The made-up genome: 3 genes in 10 have a real eQTL. Effects are in units of
-the spread among people with the same genotype, typically 0.5 (from about 0.15
-to 1.6), raising or lowering expression; allele frequencies run from 0.05 to
-0.5. The test is the regression of expression on genotype (t-test on the
-slope, 98 degrees of freedom). One SNP per gene keeps it simple: real studies
-test thousands of SNPs near each gene. A new `SCAN:` step makes a new genome;
-showing the step again reopens voting and hides which genes are real, keeping
-the answers given so far. The constants are at the top of the scan code in
-`index.html` (`SCAN_G`, `SCAN_N`, `SCAN_REAL`).
 
 ### Re-poll: before and after
 
